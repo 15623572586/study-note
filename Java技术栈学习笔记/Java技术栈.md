@@ -1,3 +1,9 @@
+[TOC]
+
+----
+
+
+
 # 1. Java基础
 
 ## 1.1 语言基础
@@ -164,7 +170,14 @@
 
 #### 1.1.4.2 文件操作
 
-##### 一、字符流操作
+**使用流操作文件的步骤**：
+
+1. 实例化File类对象，指明要操作的文件；
+2. 提供具体流（通道）
+3. 数据读入（写出）
+4. 流的关闭
+
+##### 一、字符流操作（Writer/Reader)
 
 1. 读取文件的例子：
 
@@ -274,7 +287,7 @@
     }
 ```
 
-##### 二、字节流操作
+##### 二、字节流操作(FileInputStream/FileOutputStream)
 
 不能使用使用字符流读取图片、视频等非文本二进制文件，使用字符流复制非文本二进制文件，文件会变大。
 
@@ -287,6 +300,277 @@
 对unicode的理解：unicode只是一种编码规范，Unicode就如同一本字典，目前世界上有100多万个字符，从0开始对每个字符进行十进制编号，十进制转换成16进制就是我们常说的码点。
 
 这样来看的话，也算是能理解为什么java中Reader.read()方法返回的是个int而不是char，因为早期的字符Unicode最多用16bit来表示，后来Unicode支持的字符远远超过2^16个，因此char无法表示所有的字符，而java中int类型占用4个字节（32bit），已经足够覆盖Unicode编码范围。
+
+还需要了解文本文件和非文本文件是如何存储的。 
+
+输入流读取文本文件会有什么后果？看下面的这个例子：
+
+```java
+/**
+* 对于这种按字节读取，如果读一个字节存不下的字符，就可能出现乱码
+* GBK编码一个汉字占2个字节，utf-8通常占三个字节，扩展B区以后的汉字占4个字节
+* 比如文本文件中的内容是Hello 中国人，每五个字节一读，第一次读“Hello",第二次读” 中“加国字的第一个字节，第三次读国字的后两个字节以及人的三个字节，
+* 这样读出来的数据国字将会乱码。输出是：Hello 中���人
+*/
+public static void testFileInputStream() {
+    FileInputStream in = null;
+    try {
+        // 1、实例化File
+        File file = new File("F:\\projects\\java-demo\\src\\Study\\test.txt");
+        // 2、提供流
+        in = new FileInputStream(file);
+        // 3、读数据
+        byte[] buffer = new byte[5];
+        int len;
+        StringBuilder stringBuilder = new StringBuilder();
+        while ((len = in.read(buffer)) != -1) { //read如果没有参数默认返回一个字节的数据
+            String str = new String(buffer, 0, len);
+            stringBuilder.append(str);
+        }
+        System.out.println(stringBuilder);
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        // 4、关闭流
+        try {
+            if (in != null) {
+                in.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+使用字节流操作非文本二进制文件，例子：
+
+```java
+
+/**
+* 复制图片
+*/
+public static void testFileIntputOutputStream() {
+    FileInputStream fis = null;
+    FileOutputStream fos = null; // 如果不存在，则创建；如果存在，则覆盖
+    try {
+        // 1、创建File对象
+        File srcFile = new File("F:\\projects\\java-demo\\src\\Study\\iostream2xx.png");
+        File desFile = new File("F:\\projects\\java-demo\\src\\Study\\iostreamnew.png");
+        // 2、创建流
+        if (!srcFile.exists()) return;
+        fis = new FileInputStream(srcFile);
+        fos = new FileOutputStream(desFile, false);
+        // 3、读数据
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = fis.read(buffer)) != -1) {
+            fos.write(buffer, 0, len);
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            // 4、关闭流
+            if (fis != null) {
+                fis.close();
+            }
+            if (fos != null) {
+                fos.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+值得一说的是，对于复制或转储文件，使用字节流也是没有问题的，字节流只充当搬运通道的功能。
+
+##### 三、缓冲流的使用（实际项目中用的更多）
+
+1. 缓冲流：BufferedInputStream \ BufferedOutputStream \ BufferedReader \ BufferedWriter
+2. 作用：提高流的读取、写入的速度。
+   提速原理是什么？答：通过缓冲输入的方式提高读写效率，在BufferedInputStream中定义了DEFAULT_BUFFER_SIZE=8192这个常量，在BufferedReader中定义了这样一个常量，这个常量代表内部缓冲区的大小为8192byte，在创建buffer对象的时候，内存中会创建一个buf[8192]的byte数组（BufferReader中是char[]cb），使用buffer读取数据的时候，会先将数据写入buf这个数组中，输出的时候，并非读一次写一次，而是积累到缓冲数组满了之后一次性通过buf数组输出。每次输出之后都会有一次flush()操作，来刷新缓冲区。
+
+字符缓冲流的使用：
+
+```java
+/**
+* BufferedReader 和 BufferedWriter
+*/
+public static void testBuffered() {
+    FileReader fileReader = null;
+    FileWriter fileWriter = null;
+    BufferedReader bufferedReader = null;
+    BufferedWriter bufferedWriter = null;
+    try {
+        // 1、实例化File对象
+        File srcFile = new File("F:\\projects\\java-demo\\src\\Study\\test.txt");
+        File desFile = new File("F:\\projects\\java-demo\\src\\Study\\test1.txt");
+        // 2、创建节点流（字符流）
+        fileReader = new FileReader(srcFile);
+        fileWriter = new FileWriter(desFile);
+        // 3、创建处理流（缓冲字符流）
+        bufferedReader = new BufferedReader(fileReader);
+        bufferedWriter = new BufferedWriter(fileWriter);
+        // 4、读数据，写数据（文本文件使用char）
+        char[] buffer = new char[1024];
+        int len;
+        while ((len = bufferedReader.read(buffer)) != -1) {
+            bufferedWriter.write(buffer, 0, len);
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            //关闭流：先关外层，再关内层
+            bufferedReader.close();
+            bufferedWriter.close();
+            fileReader.close();
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+字节缓冲流的使用：
+
+```java
+/**
+* BufferedInputStream 和 BufferedOutputStream
+*/
+public static void testBufferedStream() {
+    FileInputStream fis = null;
+    FileOutputStream fos = null;
+    BufferedInputStream bfis = null;
+    BufferedOutputStream bfos = null;
+    try {
+        // 1、实例化File对象
+        File srcFile = new File("F:\\projects\\java-demo\\src\\Study\\iostreamnew.png");
+        File desFile = new File("F:\\projects\\java-demo\\src\\Study\\iostreamnew1.png");
+        // 2、创建节点流（字节流）
+        fis = new FileInputStream(srcFile);
+        fos = new FileOutputStream(desFile);
+        // 3、创建处理流（缓冲字节流）
+        bfis = new BufferedInputStream(fis);
+        bfos = new BufferedOutputStream(fos);
+        // 4、读数据，写数据（非文本文件使用byte）
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = bfis.read(buffer)) != -1) {
+            bfos.write(buffer, 0, len);
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            //关闭流：先关外层，再关内层
+            bfis.close();
+            bfos.close();
+            //说明：关闭外层流的同时，内层流也会自动进行关闭，内层流的关闭可以省略。
+            fis.close();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+文件加密、解密
+
+```java
+/**
+* 加密
+*/
+public static void fileEncrypt() {
+    FileInputStream fis = null;
+    FileOutputStream fos = null;
+    BufferedInputStream bfis = null;
+    BufferedOutputStream bfos = null;
+    try {
+        // 1、实例化File对象
+        File srcFile = new File("F:\\projects\\java-demo\\src\\Study\\iostreamnew.png");
+        File desFile = new File("F:\\projects\\java-demo\\src\\Study\\iostreamnew1.png");
+        // 2、创建节点流（字符流）
+        fis = new FileInputStream(srcFile);
+        fos = new FileOutputStream(desFile);
+        // 3、创建处理流（缓冲字符流）
+        bfis = new BufferedInputStream(fis);
+        bfos = new BufferedOutputStream(fos);
+        // 4、读数据，写数据（非文本文件使用byte）
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = bfis.read(buffer)) != -1) {
+            // 加密操作：改变字节数组中每个字节的数据
+            for (int i = 0; i < len; i++) {
+                buffer[i] = (byte) (buffer[i] ^ 5);
+            }
+            bfos.write(buffer, 0, len);
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            //关闭流：先关外层，再关内层
+            bfis.close();
+            bfos.close();
+            fis.close();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+/**
+* 解密
+*/
+public static void fileDecrypt() {
+    FileInputStream fis = null;
+    FileOutputStream fos = null;
+    BufferedInputStream bfis = null;
+    BufferedOutputStream bfos = null;
+    try {
+        // 1、实例化File对象
+        File srcFile = new File("F:\\projects\\java-demo\\src\\Study\\iostreamnew1.png");
+        File desFile = new File("F:\\projects\\java-demo\\src\\Study\\iostreamnew2.png");
+        // 2、创建节点流（字符流）
+        fis = new FileInputStream(srcFile);
+        fos = new FileOutputStream(desFile);
+        // 3、创建处理流（缓冲字符流）
+        bfis = new BufferedInputStream(fis);
+        bfos = new BufferedOutputStream(fos);
+        // 4、读数据，写数据（非文本文件使用byte）
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = bfis.read(buffer)) != -1) {
+            // 解密操作：如何加密即如何解密，两个数相同异或为0，任何一个数与0异或都得它本身
+            for (int i = 0; i < len; i++) {
+                buffer[i] = (byte) (buffer[i] ^ 5);
+            }
+            bfos.write(buffer, 0, len);
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            //关闭流：先关外层，再关内层
+            bfis.close();
+            bfos.close();
+            fis.close();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+
 
 ### 1.1.5 接口
 
