@@ -1,9 +1,3 @@
-[TOC]
-
-----
-
-
-
 # 1. Java基础
 
 ## 1.1 语言基础
@@ -297,9 +291,9 @@
 
 字节（byte[baɪt]）是存储数据的基本单位，位（bit[bɪt]）是存储数据的最小单位，1byte=8bit。计算机中整型数据都是以补码来存储的，正数的补码=原码，复数的补码=（除符号位外）原码取反+1，一个字节表示的范围是`-128~127`，在以字节形式存储的非文本二进制文件中，某个字节很有可能是一个负数，然而字符型变量以char类型表示，表示的范围是0~65535，使用FileReader读取字符就会将复数编程正数，比如将字节{-1}写入文件，使用read()的返回值65533，65533这个数使用一个字节根本存不下，所以使用FileReader读出来再用FileWriter写入文件，文件会变大。（解释的不够详细，需要详细了解系统编码）
 
-对unicode的理解：unicode只是一种编码规范，Unicode就如同一本字典，目前世界上有100多万个字符，从0开始对每个字符进行十进制编号，十进制转换成16进制就是我们常说的码点。
+对unicode的理解：unicode只是定义了一个庞大的、全球通用的**字符集**，从0开始对每个字符进行十进制唯一编号，十进制转换成16进制就是我们常说的码点，所有文字都用两个字节来表示（2^16)，至于如何存储，存储成什么样的字节流，取决于字符编码方案，推荐的unicode编码是UTF-8（变长1-4字节）和UTF-16。
 
-这样来看的话，也算是能理解为什么java中Reader.read()方法返回的是个int而不是char，因为早期的字符Unicode最多用16bit来表示，后来Unicode支持的字符远远超过2^16个，因此char无法表示所有的字符，而java中int类型占用4个字节（32bit），已经足够覆盖Unicode编码范围。
+这样来看的话，也算是能理解为什么java中Reader.read()方法返回的是个int而不是char，java中int类型占用4个字节（32bit），已经足够覆盖Unicode编码范围。
 
 还需要了解文本文件和非文本文件是如何存储的。 
 
@@ -387,7 +381,7 @@ public static void testFileIntputOutputStream() {
 
 值得一说的是，对于复制或转储文件，使用字节流也是没有问题的，字节流只充当搬运通道的功能。
 
-##### 三、缓冲流的使用（实际项目中用的更多）
+##### 三、缓冲流的使用（处理流）
 
 1. 缓冲流：BufferedInputStream \ BufferedOutputStream \ BufferedReader \ BufferedWriter
 2. 作用：提高流的读取、写入的速度。
@@ -567,6 +561,214 @@ public static void fileDecrypt() {
             e.printStackTrace();
         }
     }
+}
+```
+
+##### 四、转换流（字符流、处理流）
+
+项目中一般在读取文本文件内容的时候会用到，转换流其实就是解码与编码的过程，
+
+1. 转换流：属于字符流
+
+   InputStreamReader：将一个字节的输入流转换为字符的输入流（解码）
+
+   OutputStreamWriter：将一个字符的输出流转换为字节的输出流（编码）
+
+   方便记：内存中为字符
+
+2. 作用：提供字节流与字符流之间的转换
+
+3. 解码：字节、字节数组 --->字符数组、字符串
+
+   编码：字符数组、字符串 ----> 字节、字节数组
+
+4. 字符集：utf-8，或gbk
+
+InputStreamReader使用的例子：
+
+```java
+
+/**
+* InputStreamReader使用，实现字节输入流到字符输入流的转换
+*/
+public static void testInputStreamReader() {
+    InputStreamReader isr = null;
+    try {
+        FileInputStream fis = new FileInputStream("F:\\projects\\java-demo\\src\\Study\\test.txt");
+        //残数2指明了字符集，具体根据文件保存时使用的字符集
+        isr = new InputStreamReader(fis, "UTF-8");
+        char[] cb = new char[1024];
+        int len;
+        StringBuilder stringBuilder = new StringBuilder();
+        while ((len = isr.read(cb)) != -1) {
+            String str = new String(cb, 0, len);
+            stringBuilder.append(str);
+        }
+        System.out.println(stringBuilder);
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            isr.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+OutputStreamWriter：
+
+```java
+/**
+* 综合使用InputStreamReader和OutputStreamWriter，
+* 实现文本文件格式转换,输入utf-8，输出gbk
+*/
+public static void testStreamReaderWriter() {
+    InputStreamReader isr = null;
+    OutputStreamWriter osr = null;
+    try {
+        FileInputStream fis = new FileInputStream("F:\\projects\\java-demo\\src\\Study\\test.txt");
+        FileOutputStream fos = new FileOutputStream("F:\\projects\\java-demo\\src\\Study\\testgbk.txt");
+        //残数2指明了字符集，具体根据文件保存时使用的字符集
+        isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
+        osr = new OutputStreamWriter(fos, "GBK");
+        char[] cb = new char[1024];
+        int len;
+        StringBuilder stringBuilder = new StringBuilder();
+        while ((len = isr.read(cb)) != -1) {
+            osr.write(cb, 0, len);
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            isr.close();
+            osr.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+##### 五、标准输入、输出流
+
+1. Scanner
+
+输入字符串
+
+```java
+Scanner scanner = new Scanner(System.in);
+while (scanner.hasNextLine()) {
+    String str = scanner.nextLine().toUpperCase(Locale.ROOT);
+    System.out.println(str);
+}
+```
+
+**next() 与 nextLine() 区别**
+
+next():
+
+- 一定要读取到有效字符后才可以结束输入。
+- 对输入有效字符之前遇到的空白，next() 方法会自动将其去掉。
+- 只有输入有效字符后才将其后面输入的空白作为分隔符或者结束符。
+- next()不能得到带有空格的字符串。
+
+nextLine()：
+
+- 以Enter为结束符,也就是说 nextLine()方法返回的是输入回车之前的所有字符。
+- 可以获得空白。
+
+输入多个数字：
+
+```java
+Scanner scan = new Scanner(System.in);
+int[] arr = new int[5];
+int index = 0;
+while (scan.hasNextInt() && index < 5) {
+    arr[index] = scan.nextInt();
+}
+System.out.println(arr);
+```
+
+2. 标准输入输出操作
+
+```java
+/**
+     * 1、标准输入\输出流
+     *     1.System.in：标准输入流，类型是InputStream，默认从键盘输入，
+     *     2.System.out：标准输出流,类型是PrintStream，默认从控制台输出
+     * 2、System类的setIn(InputStream is) / setOut(PrintStream ps) 方式重新指定输入和输出的流
+     * 3、练习：从键盘输入字符串，要求将读取到的整行字符串转换成大写输出，然后继续进行输入操作，
+     * 直到输入”e“或者”exit“时退出程序
+     */
+public static void systemInOut() {
+    //方法一：使用Scanner实现，调用next()返回一个字符串。
+    Scanner scanner = new Scanner(System.in);
+    while (scanner.hasNextLine()) {
+        String str = scanner.nextLine();
+        if (str.equals("e") || str.equals("exit")) {
+            break;
+        }
+        System.out.println(str.toUpperCase());
+    }
+    //方法二：使用System.in实现,System.in的类型是InputStream，我们可以使用转换流将字节流转换成字符流
+    InputStreamReader isr = null;
+    BufferedReader bufferedReader = null;
+    try {
+        isr = new InputStreamReader(System.in);
+        bufferedReader = new BufferedReader(isr);
+        String lineStr;
+        while ((lineStr = bufferedReader.readLine()) != null) {
+            if ("e".equals(lineStr) || "exit".equals(lineStr)) {
+                break;
+            }
+            System.out.println(lineStr.toUpperCase());
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            bufferedReader.close();
+            isr.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+}
+```
+
+##### 六、打印流
+
+```java
+public static void main(String arg[]) throws Exception{
+    PrintStream ps = null ;        // 声明打印流对象
+    // 如果现在是使用FileOuputStream实例化，意味着所有的输出是向文件之中
+    ps = new PrintStream(new FileOutputStream(new File("d:" + File.separator + "test.txt"))) ;
+    ps.print("hello ") ;
+    ps.println("world!!!") ;
+    ps.print("1 + 1 = " + 2) ;
+    ps.close() ;
+}
+```
+
+##### 七、数据流
+
+数据流是缓冲流的包装类，缓冲流又是FileInputstream的包装类，此类里面有各种写入字符串、基本数据类型数据的方法
+
+```java
+public static void main(String[] args) throws IOException {
+    DataOutputStream ds=new DataOutputStream(new FileOutputStream("F:/tss1.txt"));
+    ds.writeInt(34);
+    ds.writeDouble(12.3);
+    ds.writeChars("张三");
+    ds.close();
+    DataInputStream dis=new DataInputStream(new FileInputStream("F:/tss1.txt"));
+    System.out.println(dis.readInt());
+    System.out.println(dis.readDouble());
+    System.out.println((dis.readChar())+""+dis.readChar());
 }
 ```
 
