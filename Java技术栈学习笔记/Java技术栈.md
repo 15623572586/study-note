@@ -162,7 +162,7 @@
 
 ![image-20220321083317751](images/image-20220321083317751.png)
 
-#### 1.1.4.2 文件操作
+#### 1.1.4.2 各种流的使用
 
 **使用流操作文件的步骤**：
 
@@ -772,11 +772,374 @@ public static void main(String[] args) throws IOException {
 }
 ```
 
+##### 八、对象流(处理流-序列化和反序列化)
 
+ObjectInputStream和ObjectOutputStream：用于存储和读取基本数据类型数据或对象的处理流。它的强大之处在于可以把Java中的对象写入到数据源中，也能把对象从数据源中还原回来。
+
+* 序列化：用ObjectInputStream类**保存**基本数据类型或对象的机制
+* 反序列化：用ObjectOutputStream类读取基本数据类型或对象的机制
+* 对象流不能序列化**static**和**transient**修饰的成员变量
+
+**对象的序列化**(借着对象流浅浅了解一波)：
+
+* 对象的序列化机制允许把内存中的Java对象转换成平台无关的二进制流，从而允许把这种二进制流持久地保存在磁盘上，或通过网络将这种二进制流传输到另一个网络节点。当其他程序获取了这种二进制流就可以恢复成原来的Java对象。
+
+* 序列化的好处在于可以将任何实现了Serializable接口的对象转化成字节数据，使其在保存和传输时可以被还原。
+
+* 序列化是RMI（Remote Method Invoke -远程方法调用）过程的参数和返回值都必须实现的机制，而RMI是JavaEE的基础。因此序列化机制是JavaEE平台的基础。
+
+* 如果需要让某个对象支持序列化机制，则必须让对象所属的类及其属性是可序列化的，为了让某个类是可序列化的，该类必须实现如下两个接口之一，否则会抛出**NotSerializableException**异常
+
+  -> **Serializable**
+
+  -> **Externalizable**
+
+对象流操作：序列化、反序列化以及让类支持序列化
+
+* 凡是实现Serializable接口的类都有一个表示序列化版本标识符的静态变量：
+  * public static final long serialVersionUID = 13231231L; //值可以任意
+  * SerialVersionUID用来表明类的不同版本间的兼容性。简言之，其目的是以序列化对象进行版本控制，有关个版本反序列化时是否兼容。
+  * 如果类没有显示定义这个静态变量，它的值时Java运行时环境根据类的内部细节自动生成的（如何生成的？）。若类的实例变量做了修改，serialVersionUID可能发生变化。故建议显示声明。
+* 简单来说，Java的序列化机制是通过在运行时判断类的serialVersionUID来验证版本一致性。在进行反序列化时，JVM会把传来的字节流中的SerialVersionUID与本地相应实体类的serialVersionUID进行比较，如果相同就认为是一致的，可以进行反序列化，否则就会出现序列化版本不一致的异常。(InvalidCastException)
+
+```java
+
+/**
+ * 对象流的使用
+ */
+public class ObjectInputOutputStream {
+    /**
+     * ObjectOutputStream 对象输出流的使用
+     * 序列化过程：将内存中的Java对象保存到磁盘中或通过网络传输出去
+     */
+    @Test
+    public void testObjectOutputStream() {
+        ObjectOutputStream objOs = null;
+        try {
+            File file = new File("F:\\projects\\java-demo\\src\\Study\\testObjStream");
+            FileOutputStream fos = new FileOutputStream(file);
+            objOs = new ObjectOutputStream(fos);
+            objOs.writeObject(new Person("王明", 23));
+            objOs.flush(); //刷新操作
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (objOs != null) {
+                    objOs.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * 反序列化：将磁盘文件中的对象还原为内存中的一个java对象
+     * 使用ObjectInputStream来实现
+     */
+    @Test
+    public void testObjectInputStream() {
+        ObjectInputStream objIs = null;
+        try {
+            File file = new File("F:\\projects\\java-demo\\src\\Study\\testObjStream");
+            FileInputStream fis = new FileInputStream(file);
+            objIs = new ObjectInputStream(fis);
+            Person str = (Person) objIs.readObject();
+            System.out.println(str);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (objIs != null) {
+                    objIs.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+}
+/**
+ * Person 需要满足如下要求方可序列化：
+ * 1、需要实现接口：Serializable
+ * 2、当前类提供一个全局常量：serialVersionUID
+ * 3、除了当前Person类需要实现Serializable接口之外，还需必须保证其内部所有属性也必须是可序列化的。（默认情况下基本数据类型及其对象可序列化）
+ */
+class Person implements Serializable {
+
+    public static final long serialVersionUID = 13231231L;
+
+    private String name;
+    private Integer age;
+
+    Person(String name, Integer age) {
+        name = name;
+        age = age;
+    }
+}
+```
+
+##### 九、随机存取文件流（了解）
+
+RandomAccessFile直接继承于java.lang.Object类，实现了DataInput和DataOutput接口，它既可以作为一个输入流，又可以作为一个输出流。
+
+```java
+public class RandomAccessFileTest {
+    @Test
+    public void test1() {
+        RandomAccessFile randomAccessFile = null;
+        RandomAccessFile randomAccessFile1 = null;
+        try {
+            // 第二个参数是mode：r(只读、文件已存在),rw（读写）,rwd（读写，同步内容更新）,rws（读写，同步内容和元数据更新
+            randomAccessFile = new RandomAccessFile(new File("F:\\projects\\java-demo\\src\\Study\\test.txt"), "r");
+            randomAccessFile1 = new RandomAccessFile(new File("F:\\projects\\java-demo\\src\\Study\\test1.txt"), "rw");
+            byte[] bytes = new byte[1024];
+            int len;
+            while ((len = randomAccessFile.read(bytes)) != -1) {
+                randomAccessFile1.write(bytes, 0, len); // 对已经存在的内容进行覆盖比如原来的内容abcd，写入的内容是aaa，写入后内容变成aaad
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (randomAccessFile != null) {
+                    randomAccessFile.close();
+                }
+                if (randomAccessFile1 != null) {
+                    randomAccessFile1.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
+##### 十、NIO.2中Path、Paths、Files类的使用
+
+* Java NIO（New IO，Non-Blocking IO(无阻塞)）是从Java1.4开始引入的，它与原来的IO有同样的作用和目的，但是使用的方式完全不同，NIO支持面向缓冲区的（IO是面向流的）、基于通道的IO操作，NIO将以更高效的方式进行文件的读写操作。
+* JavaAPI中提供了两套NIO，一套是针对标准输入输出NIO，另一套就是网络编程NIO
 
 ### 1.1.5 接口
 
 ### 1.1.6 容器
+
+#### 1.1.6.1  Collectoin接口
+
+##### 一、单列集合框架结构
+
+|------Collection接口：单列集合，用来存储一个一个的对象
+
+​		|------List接口：存储有序的、可重复的数据。
+
+​				|------ArrayList：作为List的主要实现类；线程不安全，效率高；底层使用Object[] elementData存储。
+
+​				|------LinkedList：对于频繁的插入、删除操作，使用此类效率比ArrayList高；底层使用双向链表存储；
+
+​				|------Vecter：作为List古老的实现类；线程安全，效率低；底层用Object[] elementData存储。
+
+​		|------Set接口：存储无序、不可重复的数据
+
+​				|------HashSet：作为Set接口的主要实现类；线程不安全的；可以存储null值
+
+​						|------LinkedHashSet：作为HashSet的子类；遍历其内部属性时，可以按照添加的顺序遍历。
+
+​				|------TreeSet：可以按照添加对象的指定属性，进行排序
+
+![image-20220323210941899](images/image-20220323210941899.png)
+
+##### 二、Collection常用接口
+
+contains(obj)：需要obj对象所属的类重写equals方法
+
+containsAll(collection)
+
+remove(obj))：需要obj对象所属的类重写equals方法
+
+removeAll(collection)
+
+retainAll(collection)：求与collection的交集
+
+equals(collection)：两个集合的元素和顺序是否一样，都一样返回true
+
+hashCode()：返回哈希值
+
+toArray()：集合转换成数组
+
+iterater()：返回Iterater()接口实例，用于遍历集合元素。放在
+
+##### 三、集合元素的遍历
+
+###### 1. 使用Iterater遍历
+
+```java
+public void testIterator() {
+    Collection collection = new ArrayList();
+    collection.add(123);
+    collection.add("AA");
+    collection.add(new Date());
+    collection.add(1);
+    collection.add(2);
+    collection.add(new Customer());
+
+    Iterator<Object> iterator = collection.iterator();
+    while (iterator.hasNext()) {
+        System.out.println(iterator.next());
+    }
+}
+```
+
+![image-20220324095415401](images/image-20220324095415401.png)
+
+迭代器执行原理：①hasNext()判断是否还有下一个元素；②next()，**指针**下移；③将下以后的集合位置上的元素位置返回。
+
+**迭代器Iterator的remove()方法**
+
+```java
+public void testIteratorRemove() {
+    Collection collection = new ArrayList();
+    collection.add(123);
+    collection.add("AA");
+    collection.add(new Date());
+    collection.add(1);
+    collection.add(2);
+    Iterator<Object> iterator = collection.iterator();
+    while (iterator.hasNext()) {
+        Object obj = iterator.next();
+        if (obj.equals(1)) {
+            iterator.remove();
+        }
+    }
+}
+```
+
+如果还未掉用next()或者在上一次调用next()方法之后已经调用了remove方法。在调用remove都会报IllegalStateException
+
+###### 2. foreach
+
+```java
+public void testForeach() {
+    Collection collection = new ArrayList();
+    collection.add(123);
+    collection.add("AA");
+    collection.add(new Date());
+    collection.add(1);
+    collection.add(2);
+    // 集合元素类型 局部变量 : 集合对象
+    // 内部还是用了迭代器
+    for (Object obj : collection) {
+        System.out.println(obj);
+    }
+}
+```
+
+##### 四、Collection子接口之一：List接口
+
+###### 1. ArrayList源码分析
+
+* jdk7版本下：
+
+ArrayList list = new ArrayList(); //空参构造器，底层创建长度为10的Object[] elementData数组
+
+list.add(value); //elementData[0] = new Object(value);
+
+add......
+
+list.add(11); //如果此次的添加导致底层elementData数组容量不够，则扩容。默认情况下，扩容为原来的容量的1.5倍，同时需要将原有数组中的数据复制到新的数组中。
+
+**结论**：建议开发中使用带参构造器：ArrayList list =new ArrayList(int capacity);
+
+![image-20220324104254138](images/image-20220324104254138.png)
+
+* jdk8版本下：
+
+ArrayList list = new ArrayList();// 底层Object[] elementData初始化为{}，并没有创建长度为10的数组。
+
+list.add(value);// 第一次调用add()时，底层才创建了长度为10的数组，并将数据value天骄到elementData[0]
+
+add......
+
+后续添加和扩容操作与jdk7无异。
+
+小结：jdk7中的arraylist创建类似于单例的饿汉式，而jdk8中arraylist的对象的创建类似于单例的懒汉式，延迟了数组的创建，节省了内存。
+
+###### 2. LinkedList源码分析
+
+LInkedList list = new LinkedList(); //内部声明了Node类型的first和last属性，默认值为null
+
+list.add(123); //将123封装到Node中创建Node对象
+
+其中Node定义如下，体现了LinkedList的双向链表的说法
+
+```java
+private static class Node<E> {
+    E item;
+    Node<E> next;
+    Node<E> prev;
+
+    Node(Node<E> prev, E element, Node<E> next) {
+        this.item = element;
+        this.next = next;
+        this.prev = prev;
+    }
+}
+```
+
+###### 3. Vector源码分析
+
+jdk7hejdk8中通过Vector()构造器创建对象时，底层都创建了长度为10的数组，在扩容方面，默认扩容为原来的数组长度的2倍。
+
+###### 4. 常用方法
+
+增：add(Object obj)
+删：remove(int index)  / remove(Object obj)
+改：set(int index, Object obj)
+查：get(int index)
+插：add(int index, Object obj)
+长度：size()
+遍历：①Iterator 迭代器方式
+			②foreach
+			③普通for
+
+##### 五、Collection子接口之二：Set接口
+
+###### 1.
+
+##### 面试题
+
+###### 1. 面试题：ArrayList、LinkedList、Vector三者异同？
+
+同：三个类都实现了List接口，存储数据的特点相同：存储有序、可重复的数据。
+
+异： ArrayList：作为List的主要实现类；线程不安全，效率高；底层使用Object[] elementData存储。
+
+​		LinkedList：对于频繁的插入、删除操作，使用此类效率比ArrayList高；底层使用双向链表存储；
+
+​	 	Vector：作为List古老的实现类；线程安全，效率低；底层用Object[] elementData存储。
+
+###### 2. list.remove()考察
+
+```java
+public void testLinkedList() {
+    List<Integer> list = new ArrayList<>();
+    list.add(1);
+    list.add(2);
+    list.add(3);
+    updateList(list);
+    System.out.println(list);
+}
+public void updateList(List<Integer> list) {
+    list.remove(2); // 2为索引 移除元素3
+    //list.remove(new Integer(2)); // 2为对象，移除元素2
+}
+```
+
+
 
 ### 1.1.7 异常
 
@@ -785,6 +1148,8 @@ public static void main(String[] args) throws IOException {
 ### 1.1.9 反射
 
 ### 1.1.10 注解
+
+### 1.1.11 NIO
 
 ## 1.2 JVM
 
