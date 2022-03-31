@@ -949,6 +949,8 @@ public class RandomAccessFileTest {
 
 ​						|------LinkedHashSet：作为HashSet的子类；遍历其内部属性时，可以按照添加的顺序遍历。
 
+​															在添加数据的同时，每个数据还维护了两个引用，记录了此数据前一个树蕨和后一个数据。
+
 ​				|------TreeSet：可以按照添加对象的指定属性，进行排序
 
 ![image-20220323210941899](images/image-20220323210941899.png)
@@ -1038,7 +1040,7 @@ public void testForeach() {
 }
 ```
 
-##### 四、Collection子接口之一：List接口
+##### 四、※ Collection子接口之一：List接口
 
 ###### 1. ArrayList源码分析
 
@@ -1108,11 +1110,129 @@ jdk7hejdk8中通过Vector()构造器创建对象时，底层都创建了长度�
 
 ##### 五、Collection子接口之二：Set接口
 
-###### 1.
+* Set接口中没有额外定义新方法，都是Collection中声明过的方法：
+
+* 要求：向Set中添加元素，其所在的类一定要重写hashCode()和equals()方法。重写hashCode()和equals()尽可能保持一致性：相等的对象必须具有相等的散列码。
+
+  重写两个方法的小技巧：对象中用作equals()方法比较Field，都应该用来计算hashCode值
+
+###### 1.存储无序的、不可重复的（以HashSet说明）
+
+* 无序性：不等于随机性。存储的数据在底层数组中并非按照数组索引的顺序添加的，而是根据数据的哈希值决定的。
+* 不可重复性：保证添加的元素按照equals()方法判断时，不能返回true。即相同的元素只能添加一个。
+
+###### 2. 添加元素的过程（以HashSet为例）
+
+* 向HashSet中添加元素a，首先调用元素a所在类的hashCode()方法，计算元素a的哈希值，此哈希值接着通过某种算法计算在HashSet底层数组中的存放位置（即为索引位置），然后判断数组此位置上是否已有元素：
+
+  * 如果此位置上没有其他元素，则元素a添加成功；——>①
+
+  * 如果此位置上有其他元素b（或以链表形式存在的多个元素），则比较元素a和元素b的hash值：
+    * 如果hash值不同，则，元素a添加成功；——>②
+    * 如果hash值相同，进而需要调用元素a所在的类的equals()方法：
+      * equals()返回true，元素a添加失败；
+      * equals()返回false，则元素a添加成功。——>②
+
+对于添加成功的情况②和情况③而言：元素a与已经存在指定索引位置上数据以链表的方式存储。
+jdk 7：元素a放在数组中，指向原来的元素。（头插法，反客为主）
+jdk 8：原来的元素在数组中，指向元素a。（尾插法，先来后到）
+
+**HashSet底层：数组 + 链表**
+
+![image-20220327114932317](images/image-20220327114932317.png)
+
+###### 3. LinkedHashSet
+
+作为HashSet的子类，在添加数据的同时，每个数据还维护了两个引用，记录了此数据前一个树蕨和后一个数据。
+
+###### 4. TreeSet 
+
+* 向TreeSet中添加的数据，要求是相同类的对象
+* 两种排序方式：自然排序(实现Comparable接口) 和 定制排序
+* 自然排序中，比较两个对象是否相同的标准为：compareTo()返回0，不再是equals()。
+
+```java
+
+public class SetTest {
+    // 自然排序 实现Comparable接口
+    @Test
+    public void treeSetTest() {
+        TreeSet<User> objects = new TreeSet<>();
+        objects.add(new User("a", 2));
+        objects.add(new User("b", 3));
+        objects.add(new User("c", 4));
+        objects.add(new User("d", 5));
+        Iterator<User> userIterator = objects.iterator();
+        while (userIterator.hasNext()) {
+            System.out.println(userIterator.next());
+        }
+    }
+    //定制排序
+    @Test
+    public void test1() {
+        Comparator comparable = new Comparator() {
+            // 按照年龄从小到大排序
+            @Override
+            public int compare(Object o1, Object o2) {
+                if (o1 instanceof User && o2 instanceof User) {
+                    User u1 = (User) o1;
+                    User u2 = (User) o2;
+                    return Integer.compare(((User) o1).age, ((User) o2).age);
+                }else {
+                    throw new RuntimeException("数据类型不匹配");
+                }
+            }
+        };
+
+        TreeSet<User> objects = new TreeSet<>(comparable);
+        objects.add(new User("c", 4));
+        objects.add(new User("d", 5));
+        objects.add(new User("a", 2));
+        objects.add(new User("b", 3));
+        objects.add(new User("e", 3)); //不会添加进去
+        Iterator<User> userIterator = objects.iterator();
+        while (userIterator.hasNext()) {
+            System.out.println(userIterator.next());
+        }
+    }
+}
+
+class User implements Comparable {
+    String username;
+    Integer age;
+
+    public User(String username, Integer age) {
+        this.username = username;
+        this.age = age;
+    }
+
+    //按姓名从小到大排
+    @Override
+    public int compareTo(Object o) {
+        if (o instanceof User) {
+            User user = (User) o;
+            return this.username.compareTo(username);
+        }else {
+            System.out.println("输入的类型不匹配");
+        }
+        return 0;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "username='" + username + '\'' +
+                ", age=" + age +
+                '}';
+    }
+}
+```
+
+
 
 ##### 面试题
 
-###### 1. 面试题：ArrayList、LinkedList、Vector三者异同？
+###### 1.※  面试题：ArrayList、LinkedList、Vector三者异同？
 
 同：三个类都实现了List接口，存储数据的特点相同：存储有序、可重复的数据。
 
@@ -1139,7 +1259,475 @@ public void updateList(List<Integer> list) {
 }
 ```
 
+###### 3. set代码题
 
+```java
+// Persons重写了hashCode和equals
+public class Testing{
+    @Test
+    public void test() {
+        HashSet set = new HashSet();
+        Persons p1 = new Persons(1001, "AA");
+        Persons p2 = new Persons(1002, "BB");
+
+        set.add(p1);
+        set.add(p2);
+        System.out.println(set); //1001 AA 1002 BB
+        p1.username = "CC";
+        set.remove(p1);  //根据1001和CC算出hash值，找不到AA添加时的位置，移除失败
+        System.out.println(set);//1001 CC 1002 BB
+        set.add(new Persons(1001, "CC")); // 根据1001和CC算出hash值，与AA添加时不同，添加成功
+        System.out.println(set);//1001 CC, 1002 BB, 1001 CC
+        set.add(new Persons(1001, "AA")); //与最开始的AAhash值相同，但是AA变成了CC，equals返回false
+        System.out.println(set); // 1001 CC, 1002 BB, 1001 CC，1001 AA
+    }
+}
+/**
+
+*/
+class Persons {
+    String username;
+    Integer age;
+
+    public Persons( Integer age, String username) {
+        this.username = username;
+        this.age = age;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "username='" + username + '\'' +
+                ", age=" + age +
+                '}';
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Persons user = (Persons) o;
+
+        if (username != null ? !username.equals(user.username) : user.username != null) return false;
+        return age != null ? age.equals(user.age) : user.age == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = username != null ? username.hashCode() : 0;
+        result = 31 * result + (age != null ? age.hashCode() : 0);
+        return result;
+    }
+}
+```
+
+#### 1.1.6.2 Map接口
+
+* Map：双列数据，存储key-value对数据
+  * HashMap：作为主要的实现类；线程不安全的，效率高；可以存储null的key和value
+    * LinkedHashMap：保证在遍历map元素时，可以按照添加的顺序实现遍历。原因：在原有的HashMap底层结构基础上，添加了一对指针，指向前一个和都一个元素，对于频繁的遍历操作，此类执行效率高于HashMap
+  * TreeMap：保证添加的key—value对进行排序，实现排序遍历。此时考虑key的自然排序或定制排序
+    * 底层使用红黑树
+  * Hashtable：作为古老的实现类；线程安全的，效率低；不能存储null的key和value
+    * Properties：常用来处理配置文件。key和value都是String类型。
+
+HashMap的底层：数组+链表（jdk7-）||  数组+链表+红黑树（jdk8+）
+
+##### 1.1.6.2.1 HashMap底层实现原理
+
+###### 1. Map结构的理解
+
+* Map中的key：无序的、不可重复，使用Set存储所有key（以HashMap为例，key所在的类，需要重写equals和hashCode() ，一般情况下，很少用自定义类作为key，Integer和String作为key的情况比较多，Integer和String类都重写了equals和hashCode方法）
+* Map中的value：无序、可重复，使用Collection存储所有的value，value所在的类需要重写equals
+* 一个key-value构成了一个Entry对象。
+* Map中的entry：无序、不可重复的，使用Set存储所有的entry
+
+###### 2. HashMap的底层实现原理
+
+* jdk 7u8中：底层采用Entry[] table数组存储数据，entry是HashMap的内部类，
+
+  ```java
+  static class Entry<K,V> implements Map.Entry<K,V> {
+      final K key;
+      V value;
+      Entry<K,V> next;
+      int hash;
+  }
+  ```
+
+  * HashMap map = new HashMap(int initialCapacity, float loadFactor)：在实例化时，首先调用无参构造函数，在无参构造函数中调用重载的构造函数HashMap(int initialCapacity, int loadFactor)，第一个参数是默认初始容量 ，默认值为16=1<<4，第二个参数为负载因子，默认值为0.75
+
+    ```java
+    // 默认初始容量 - 必须是 2 的幂
+    static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
+    //构造函数中未指定时使用的负载因子
+    static final float DEFAULT_LOAD_FACTOR = 0.75f;
+    // 最大容量，如果一个更高的值由任何一个带参数的构造函数隐式指定时使用。必须是 2 <= 1<<30 的幂。
+    static final int MAXIMUM_CAPACITY = 1 << 30;
+    //构造一个具有默认初始容量 (16) 和默认加载因子 (0.75) 的空HashMap 
+    public HashMap() {
+        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
+    }
+    //构造一个具有指定初始容量和负载因子的空 HashMap。 
+    //@param initialCapacity 初始容量
+    //@param loadFactor 负载因子
+    public HashMap(int initialCapacity, float loadFactor) {
+        if (initialCapacity < 0)
+            throw new IllegalArgumentException("Illegal initial capacity: " + initialCapacity);
+        if (initialCapacity > MAXIMUM_CAPACITY)
+            initialCapacity = MAXIMUM_CAPACITY;
+        if (loadFactor <= 0 || Float.isNaN(loadFactor))
+            throw new IllegalArgumentException("Illegal load factor: " + loadFactor);
+        this.loadFactor = loadFactor;
+        threshold = initialCapacity; // 扩容临界点值
+        init();
+    }
+    // 初始化方法，在HashMap中没有实现
+    void init() {}
+    ```
+
+  * map.put（key1，value1) ：首先：如果首次调用put方法添加数据，先调用inflateTable(int toSize)方法在底层创建长度为16的一维数组Entry[] table
+    调用key1所在类的hashCode方法计算key1的哈希值，此哈希值经过某种算法计算以后，得到Entry数组中的存放位置i，
+
+    * 如果此位置上的数据为空，此时key1-value1添加成功.——>情况①
+    * 如果此位置上的数据不为空，意味着此位置存在一个或多个数据（以链表的形式存在），比较key1和已经存在的一个或多个数据的哈希值：
+      * 如果key1的哈希值与已经存在的数据的hash值都不相同，此时key1-value1添加成功。——>情况②
+      * 如果key1的hash值和已经存在的某一个数据（key2-value2）的hash值相同，继续比较，调用key1所在类的equals方法，比较：
+        * 如果equals方法返回false：此时key1-value1添加成功。——>情况③
+        * 如果equals返回true：使用value1替换value2。
+
+  补充：关于情况②和③：此时key1-value1和原来的数据以链表的形式存在，在不断的添加过程中，会涉及到扩容问题，当超出临界值（且要存放的位置非空）时，扩容，默认扩容为原来的2倍，并将原来的数据复制。
+
+  ```java
+  // 初始空表 用来判断table是否为空
+  static final Entry<?,?>[] EMPTY_TABLE = {};
+  // 此映射中包含的键值映射的数量。
+  transient int size;
+  // 添加元素
+  public V put(K key, V value) {
+      if (table == EMPTY_TABLE) {
+          inflateTable(threshold); // 创建entry数组
+      }
+      if (key == null)
+          return putForNullKey(value);
+      int hash = hash(key); //使用key计算hash值
+      int i = indexFor(hash, table.length);
+      for (Entry<K,V> e = table[i]; e != null; e = e.next) {
+          Object k;
+          if (e.hash == hash && ((k = e.key) == key || key.equals(k))) {
+              V oldValue = e.value;
+              e.value = value;
+              e.recordAccess(this);
+              return oldValue;
+          }
+      }
+      modCount++;
+      addEntry(hash, key, value, i);
+      return null;
+  }
+  private void inflateTable(int toSize) {
+      // 求容量: 必须满足2^n
+      int capacity = roundUpToPowerOf2(toSize);
+      threshold = (int) Math.min(capacity * loadFactor, MAXIMUM_CAPACITY + 1); // 第一次put之后变成12
+      table = new Entry[capacity];
+      initHashSeedAsNeeded(capacity);
+  }
+  private static int roundUpToPowerOf2(int number) {
+      return number >= MAXIMUM_CAPACITY
+          ? MAXIMUM_CAPACITY
+          : (number > 1) ? Integer.highestOneBit((number - 1) << 1) : 1;
+  }
+  static int indexFor(int h, int length) {
+      return h & (length-1);
+  }
+  void addEntry(int hash, K key, V value, int bucketIndex) {
+      if ((size >= threshold) && (null != table[bucketIndex])) { // 如果
+          resize(2 * table.length); // 扩容为原来的两倍
+          hash = (null != key) ? hash(key) : 0;
+          bucketIndex = indexFor(hash, table.length);
+      }
+  
+      createEntry(hash, key, value, bucketIndex);
+  }
+  void createEntry(int hash, K key, V value, int bucketIndex) {
+      Entry<K,V> e = table[bucketIndex];
+      table[bucketIndex] = new Entry<>(hash, key, value, e);
+      size++; // 每新增一个节点，size++
+  }
+  /*
+  将此映射的内容重新散列到具有更大容量的新数组中。当此映射中的键数达到其阈值时，将自动调用此方法。如果当前容量为 MAXIMUM_CAPACITY，此方法不会调整map大小，而是将阈值设置为 Integer.MAX_VALUE。这具有防止将来调用的效果。
+  */
+  void resize(int newCapacity) {
+      Entry[] oldTable = table;
+      int oldCapacity = oldTable.length;
+      if (oldCapacity == MAXIMUM_CAPACITY) {
+          threshold = Integer.MAX_VALUE;
+          return;
+      }
+      Entry[] newTable = new Entry[newCapacity];
+      transfer(newTable, initHashSeedAsNeeded(newCapacity));
+      table = newTable;
+      threshold = (int)Math.min(newCapacity * loadFactor, MAXIMUM_CAPACITY + 1); // 阈值为新容量的0.75倍
+  }
+  ```
+
+* jdk 8相较于jdk7在底层实现方面的不同：
+
+  - new HashMap() : 底层没有创建一个长度为16的数组，初始化负载因子变量loadFactor。
+
+  ```java
+  transient Node<K,V>[] table; // 存储数据的数组
+  static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; //默认初始容量16
+  static final float DEFAULT_LOAD_FACTOR = 0.75f; // 默认负载因子
+  int threshold; // 
+  public HashMap() {
+      this.loadFactor = DEFAULT_LOAD_FACTOR; // all other fields defaulted
+  }
+  ```
+
+  * jdk 8底层的数组时node[] table 而非Entry[]，属性还是一样的，只是换了个名字罢了，新增数据接在链表后面。
+
+  * 扩容：
+
+    * jdk8是元素个数大于阈值（threshold）就扩容，容量扩容到原来的两倍，并且阈值也扩容为原来的两倍；
+    * jdk7是元素个数大于阈值&要存放数据的**索引**位置非空，容量扩容为原来的两倍，阈值为新容量的0.75倍
+
+  * jdk 7底层结构：数组+链表。jdk 8中底层结构：数组+链表+红黑树。
+
+    index索引位置上的链表转换成红黑树的条件：
+
+    * index索引位置上的链表长度 > 8 
+    *  table数组的长度 > 64时
+
+  ```java
+  final V putVal(int hash, K key, V value, boolean onlyIfAbsent, boolean evict) {
+      Node<K,V>[] tab; Node<K,V> p; int n, i;
+      if ((tab = table) == null || (n = tab.length) == 0) //如果是首次调用(table为空)或者没有元素(长度为0)
+          n = (tab = resize()).length;  // resize扩容
+      if ((p = tab[i = (n - 1) & hash]) == null) // i = (n - 1) & hash]计算索引位置，如果该位置没有元素直接存放
+          tab[i] = newNode(hash, key, value, null);
+      else {  // (p = tab[i = (n - 1) & hash])!=null, 即索引位置有元素
+          Node<K,V> e; // 中间变量
+          K k;
+          if (p.hash == hash &&  
+              ((k = p.key) == key || (key != null && key.equals(k))))  // p.key的哈希值与新key的哈希值相同 & key值相同
+              e = p;  //
+          else if (p instanceof TreeNode)  // 判断是不是TreeNode类型
+              e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);  //
+          else { // p.key的哈希值和key至少有一个不相同，并且也不是TreeNode类型
+              for (int binCount = 0; ; ++binCount) { // 遍历链表，p作为移动指针
+                  if ((e = p.next) == null) { // 循环结束条件，e指向p.next
+                      p.next = newNode(hash, key, value, null); 
+                      if (binCount >= TREEIFY_THRESHOLD - 1) // 链表转换成红黑树的第一个条件，链表长度>=8
+                          treeifyBin(tab, hash);
+                      break; // 结束
+                  }
+                  // 如果找到hash值和key值相同的节点，说明该key已经存在，结束循环，然后跳出else代码块
+                  if (e.hash == hash && ((k = e.key) == key || (key != null && key.equals(k)))) //找到hash值和key值相同的节点
+                      break;
+                  p = e; // 指针往后移
+              }
+          }
+          //
+          if (e != null) { // map中已经存在相同的key
+              V oldValue = e.value;
+              if (!onlyIfAbsent || oldValue == null) //onlyIfAbsent默认为false，意为更新现有值
+                  e.value = value;
+              afterNodeAccess(e); // HashMap中没有实现该方法
+              return oldValue;
+          }
+      }
+      ++modCount;
+      if (++size > threshold)  // 元素个数++，如果元素个数大于临界值，调resize方法扩容，每次扩容为原来的两倍，阈值扩大为原来的两倍
+          resize();
+      afterNodeInsertion(evict); // HashMap中没有实现该方法
+      return null;
+  }
+  // 转换成红黑树
+  final void treeifyBin(Node<K,V>[] tab, int hash) {
+      int n, index; Node<K,V> e;
+      if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY) // 链表转换成红黑树的第二个条件，table数组长度>=64
+          resize();
+      else if ((e = tab[index = (n - 1) & hash]) != null) {
+          TreeNode<K,V> hd = null, tl = null;
+          do {
+              TreeNode<K,V> p = replacementTreeNode(e, null);
+              if (tl == null)
+                  hd = p;
+              else {
+                  p.prev = tl;
+                  tl.next = p;
+              }
+              tl = p;
+          } while ((e = e.next) != null);
+          if ((tab[index] = hd) != null)
+              hd.treeify(tab);
+      }
+  }
+  // 扩容
+  final Node<K,V>[] resize() {
+      Node<K,V>[] oldTab = table;
+      int oldCap = (oldTab == null) ? 0 : oldTab.length;
+      int oldThr = threshold;
+      int newCap, newThr = 0;
+      if (oldCap > 0) { // 旧的容量 > 0，则扩容
+          if (oldCap >= MAXIMUM_CAPACITY) { // 达到最大容量，则阈值编程intger类型最大值最大值 2^31 -1
+              threshold = Integer.MAX_VALUE;
+              return oldTab;
+          }else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY && oldCap >= DEFAULT_INITIAL_CAPACITY){ // 扩容为原来的两倍
+              newThr = oldThr << 1;  // 阈值 double
+          }
+      }
+      else if (oldThr > 0) // initial capacity was placed in threshold
+          newCap = oldThr;
+      else {               // zero initial threshold signifies using defaults
+          newCap = DEFAULT_INITIAL_CAPACITY;
+          newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
+      }
+      if (newThr == 0) { 
+          float ft = (float)newCap * loadFactor;
+          newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
+                    (int)ft : Integer.MAX_VALUE);
+      }
+      threshold = newThr;
+      @SuppressWarnings({"rawtypes","unchecked"})
+      Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
+      table = newTab;
+      if (oldTab != null) { //复制数据，根据hash值和容量重新计算索引位置index = e.hash & (newCap - 1)
+          for (int j = 0; j < oldCap; ++j) {
+              Node<K,V> e;
+              if ((e = oldTab[j]) != null) {
+                  oldTab[j] = null;
+                  if (e.next == null)
+                      newTab[e.hash & (newCap - 1)] = e;
+                  else if (e instanceof TreeNode)
+                      ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
+                  else { // preserve order
+                      Node<K,V> loHead = null, loTail = null;
+                      Node<K,V> hiHead = null, hiTail = null;
+                      Node<K,V> next;
+                      do {
+                          next = e.next;
+                          if ((e.hash & oldCap) == 0) {
+                              if (loTail == null)
+                                  loHead = e;
+                              else
+                                  loTail.next = e;
+                              loTail = e;
+                          }
+                          else {
+                              if (hiTail == null)
+                                  hiHead = e;
+                              else
+                                  hiTail.next = e;
+                              hiTail = e;
+                          }
+                      } while ((e = next) != null);
+                      if (loTail != null) {
+                          loTail.next = null;
+                          newTab[j] = loHead;
+                      }
+                      if (hiTail != null) {
+                          hiTail.next = null;
+                          newTab[j + oldCap] = hiHead;
+                      }
+                  }
+              }
+          }
+      }
+      return newTab;
+  }
+  ```
+
+##### 1.1.6.2.2 LinkedHashMap底层实现原理。（了解）
+
+LinkedHashMap 继承了HashMap类，LinkedHashMap重写了newNode方法，并添加了内部类Entry，内部类中添加了两个属性after和before，LinkedHashMap中还有一个tail属性始终指向最近添加的元素，每次添加一个新的元素就需要tail指针，使用下面的代码使得添加的元素能够按添加顺序遍历
+
+```java
+tail.next = newNode
+newNode.before = tail
+```
+
+````java
+// 双向链表尾指针
+transient LinkedHashMap.Entry<K,V> tail;
+Node<K,V> newNode(int hash, K key, V value, Node<K,V> e) {
+    LinkedHashMap.Entry<K,V> p =
+        new LinkedHashMap.Entry<K,V>(hash, key, value, e);
+    linkNodeLast(p);
+    return p;
+}
+static class Entry<K,V> extends HashMap.Node<K,V> {
+    Entry<K,V> before, after; // 能够记录添加的元素的先后顺序
+    Entry(int hash, K key, V value, Node<K,V> next) {
+        super(hash, key, value, next);
+    }
+}
+private void linkNodeLast(LinkedHashMap.Entry<K,V> p) {
+    LinkedHashMap.Entry<K,V> last = tail;
+    tail = p;
+    if (last == null)
+        head = p;
+    else {
+        p.before = last;
+        last.after = p;
+    }
+}
+````
+
+##### 1.1.6.2.3 Map中常用接口
+
+增删查改。。。。
+
+Map遍历
+
+```java
+public void test() {
+    HashMap<String, Integer> map = new LinkedHashMap<>();
+    map.put("1", 1);
+    map.put("3", 3);
+    map.put("9", 2);
+    // 遍历key集
+    Set<String> set = map.keySet();
+    for (String key : set) {
+        System.out.println(key + " : " + map.get(key));
+    }
+    // 遍历value集
+    Collection<Integer> values = map.values();
+    for (Integer val : values) {
+        System.out.println(val);
+    }
+    // 遍历所有key-value：entrySet()
+    Set<Map.Entry<String, Integer>> entrySet = map.entrySet();
+    for (Map.Entry<String, Integer> entry : entrySet) {
+        System.out.println(entry.getKey() + " : " + entry.getValue());
+    }
+}
+```
+
+##### 1.1.6.2.4 TreeMap
+
+自然排序：实现Comparable方法重写compareTo方法
+
+定制排序：
+
+
+
+
+
+
+
+
+
+
+
+##### 面试题
+
+###### 1. HashMap底层实现原理？
+
+###### 2. HashMap 和 Hashtable的异同
+
+###### 3. CurrentHashMap 与 HashTable的异同？（在多线程中了解）
 
 ### 1.1.7 异常
 
