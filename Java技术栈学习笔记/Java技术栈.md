@@ -925,7 +925,25 @@ public class RandomAccessFileTest {
 * Java NIO（New IO，Non-Blocking IO(无阻塞)）是从Java1.4开始引入的，它与原来的IO有同样的作用和目的，但是使用的方式完全不同，NIO支持面向缓冲区的（IO是面向流的）、基于通道的IO操作，NIO将以更高效的方式进行文件的读写操作。
 * JavaAPI中提供了两套NIO，一套是针对标准输入输出NIO，另一套就是网络编程NIO
 
-### 1.1.5 接口
+### 1.1.5 多线程
+
+#### 1.1.5.1 基本概念：程序、进程、线程
+
+* 程序（program）：为了完成特定任务、用某种语言编写的一组指令的集合。即一段静态的代码，静态对象。
+* 进程（process）：是程序的一次执行过程，或是正在运行的一个程序，是一个动态过程：有它自身的产生、存在和消亡的过程。——生命周期
+* 线程（Thread）：进程可以进一步细化为线程，是一个程序内部的一条执行路径
+
+![image-20220402221554958](images/image-20220402221554958.png)
+
+
+
+
+
+
+
+
+
+
 
 ### 1.1.6 容器
 
@@ -1711,6 +1729,44 @@ public void test() {
 
 定制排序：
 
+```java
+TreeMap map = new TreeMap(new Comparator() {
+    @Override
+    public int compare(Object o1, Object o2) {
+    }
+})
+```
+
+##### 1.1.6.2.5 Properties 
+
+常会用来处理配置文件，key和value都是String类型
+
+```java
+public void testProperties() {
+    FileInputStream fileInputStream = null;
+    try {
+        Properties pros = new Properties();
+        fileInputStream = new FileInputStream("F:\\projects\\java-demo\\src\\Study\\info.properties");
+        pros.load(fileInputStream);
+        pros.get("username");
+        pros.get("password");
+        System.out.println(pros);
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            if (fileInputStream != null) {
+                fileInputStream.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+
+
 
 
 
@@ -1722,6 +1778,8 @@ public void test() {
 ###### 2. HashMap 和 Hashtable的异同
 
 ###### 3. CurrentHashMap 与 HashTable的异同？（在多线程中了解）
+
+###### 4. Collection和Collections的区别？
 
 ### 1.1.7 异常
 
