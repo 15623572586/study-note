@@ -935,9 +935,344 @@ public class RandomAccessFileTest {
 
 ![image-20220402221554958](images/image-20220402221554958.png)
 
+![image-20220403093627750](images/image-20220403093627750.png)
 
+#### 1.1.5.2 线程的创建和使用
 
+##### 1.1.5.2.1 多线程的创建和使用一
 
+**方式一**：继承于Thread类
+
+1. 创建一个继承于Thread类的子类
+2. 创建Thread类的run()
+3. 创建Thread类的子类对象
+
+例子：遍历
+
+```java
+// 1、创建一个继承于Thread类的子类
+class MyThread extends Thread {
+    // 2、重写Thread类的run()
+    @Override
+    public void run() {
+        for (int i = 0; i < 100; i++) {
+            if (i % 2 == 0) {
+                System.out.println(i + " : " + Thread.currentThread().getName());
+            }
+        }
+    }
+}
+public class ThreadTest {
+    List<Integer> list = new ArrayList<>();
+    @Test
+    public void testTread() {
+        // 3、创建Thread类的子类对象
+        MyThread myThread = new MyThread();
+        myThread.start();
+        // 问题一：不能通过直接调用run()方法的方式启动线程
+        //Thread.run();
+        // 问题二：在启动一个线程，遍历100以内的偶数。不能让已经start()的线程去执行，会报java.lang.IllegalThreadStateException异常
+        // myThread.start();
+        //需要重新创建一个线程的对象
+        MyThread myThread1 = new MyThread();
+        myThread1.start();
+
+        // 创建Thread类的匿名子类的方式
+        new Thread(() -> {
+            for (int i = 0; i < 100; i++) {
+                if (i % 2 == 0) {
+                    System.out.println(i + " : " + Thread.currentThread().getName());
+                }
+            }
+        }).start();
+    }
+}
+```
+
+```java
+class Thread1 extends Thread {
+    @Override
+    public void run() {
+        for (int i = 0; i < 100; i++) {
+            if (i % 2 == 0) {
+                System.out.println(i + " : " + Thread.currentThread().getName());
+                setPriority(MAX_PRIORITY);
+            }
+            if (i % 30 == 0) {
+                yield();
+            }
+        }
+    }
+}
+public class ThreadMethodTest {
+    /**
+     * 1.start()方法：启动当前线程；调用当前线程的run()
+     * 2.run()：通常需要重写Thread类中的此方法，将创建的线程要执行的操作声明在此方法中
+     * 3.currentThread：静态方法，返回执行当前代码的线程
+     * 4.getName()：获取当前线程的名字
+     * 5.setName()：设置当前线程的名字
+     * 6.yield()：释放当前CPU的执行权
+     * 7.join()：在线程A中调用线程B的join方法，此时线程A进入阻塞状态，直到线程B完全执行完以后，线程A才结束阻塞状态
+     * 8.stop()：强制线程生命期结束（已过时，不建议使用）
+     * 9.sleep(Long millitime)：让当前线程“睡眠”指定的millitime毫秒，在执行的时间内，当前线程处于阻塞状态
+     * 10.isAlive()；当前线程是否还存活
+     */
+    @Test
+    public void threadMethodTest() {
+        Thread1 thread1 = new Thread1();
+        thread1.setName("线程1");
+        thread1.start();
+        // 给主线程命名
+        Thread.currentThread().setName("主线程");
+        for (int i = 0; i < 100; i++) {
+            if (i % 2 == 0) {
+                System.out.println(i + " : " + Thread.currentThread().getName());
+                Thread.currentThread().setPriority(1);
+            }
+            if (i == 55) {
+                try {
+                    thread1.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+}
+```
+
+**线程调度**
+
+线程的优先级
+
+ `MAX_PRIORITY: 10    	MIN_PRIORITY : 1		NORM_PRIORITY : 5(默认)`
+
+如何获取和设置当前线程的优先级：
+
+`getPriority()：获取线程的优先级``
+``setPriority(int p)：设置线程的优先级`
+
+说明：高优先级的线程要抢占低优先级线程CPU执行权，但是只是从概率上将，高优先级的线程高概率的情况下被执行，并不意味着只有当高优先级的线程执行完以后，低优先级的线程才执行。
+
+##### 1.1.5.2.2 多线程的创建和使用二
+
+例子：创建三个窗口卖票，总票数是100张。
+
+方法一：继承Thread
+
+```java
+class Window extends Thread {
+    private static int ticket = 100;
+    @Override
+    public void  run() {
+        while (ticket > 0) {
+            System.out.println(getName() + ": 买票，票号" + ticket--);
+        }
+    }
+}
+public class WindowSaleTest  {
+    @Test
+    public void saleTicket() {
+        Window window1 = new Window();
+        Window window2 = new Window();
+        Window window3 = new Window();
+
+        window1.start();
+        window2.start();
+        window3.start();
+    }
+}
+```
+
+方法二：实现Runnable接口
+
+1. 创建一个实现了Runnable接口的类；
+2. 重写Thread类的run() ---> 将此线程的操作生命在run()中
+3. 创建Thread类的子类对象
+4. 通过此对象调用start()
+
+```java
+class Window1 implements Runnable {
+    private int ticket = 100;  // 不需要加static
+    @Override
+    public void run() {
+        while (ticket > 0) {
+            System.out.println(Thread.currentThread().getName() + ": 买票，票号" + ticket--);
+        }
+    }
+}
+public void testRunnable() {
+    Window1 window = new Window1();
+    new Thread(window).start();
+    new Thread(window).start();
+    new Thread(window).start();
+}
+```
+
+**两种多线程创建和使用的比较。**开发中优先选择实现Runnable接口方式：
+
+原因：
+
+1. 实现Runnable接口的方式没有类的单继承性的局限性
+2. 实现的方式更适合来处理多个线程又共享数据的情况
+
+联系：
+
+1. Thread类也是实现了Runnable接口，两种方式都需要重写run()，将线程执行的逻辑声明在run()中。
+
+#### 1.1.5.3 线程的生命周期
+
+![image-20220405160431854](images/image-20220405160431854.png)
+
+![image-20220405162343085](images/image-20220405162343085.png)
+
+#### 1.1.5.4 线程同步
+
+1. 问题：买票过程中 ，出现了重票、错票 --->出现了线程安全的问题
+2. 线程安全原因：当某个线程操作车票的过程中，尚未操作完成时，其他线程参与进来，也操作车票
+3. 如何解决：当一个线程a在操作ticket的时候，其他线程不能参与进来。直到线程a操作完ticket时，其他线程才能开始操作ticket。这种情况即使线程a出现了阻塞，也不能被改变。
+4. 在Java中，我们通过同步机制，来解决线程安全问题。
+
+方式一：同步代码块
+
+1. 操作共享数据的代码，即为需要被同步的代码
+2. 共享数据：多个线程共同操作的数据，比如ticket就是共享数据
+3. 同步监视器：俗称，锁。任何一个类的对象，都可以充当锁
+   	要求：多个线程必须要共用同一个把锁
+
+```java
+// 语法
+synchronized(同步监视器) {
+    //需要被同步的代码
+}
+// 实现Runnable方式
+class Window1 implements Runnable {
+    private int ticket = 100;  // 不需要加static
+    final Object object = new Object();
+    @Override
+    public void run() {
+        while (true) {
+            synchronized(object) {  // 一般在开发中如果是实现了Runnable接口的方式，更推荐使用synchronized(this)
+                if (ticket > 0) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(Thread.currentThread().getName() + ": 买票，票号" + ticket);
+                    ticket -- ;
+                }else {
+                    break;
+                }
+            }
+        }
+    }
+}
+
+// 继承方式
+class Window extends Thread {
+    private static int ticket = 100;
+    static Object object = new Object();  //确保object唯一
+    @Override
+    public void  run() {
+        // synchronized(object) { //object 不能换成this
+        synchronized(Window.class) {  // Window.class指挥加载一次
+            while (ticket > 0) {
+                try {
+                    sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println(getName() + ": 买票，票号" + ticket--);
+            }
+        }
+    }
+}
+
+```
+
+方式二：同步方法
+
+如果操作共享数据的代码完整的声明在一个方法中，我们不妨将此方法声明同步的。
+
+```java
+// 实现Runnable接口的方式
+class Window2 implements Runnable {
+    private int ticket = 100;  // 不需要加static
+    @Override
+    public void run() {
+        while (ticket > 0) {
+            saleTicket();
+        }
+    }
+    //使用同步方法解决实现Runnable接口的线程安全问题
+    // 同步监视器就是 this
+    synchronized public void saleTicket() {
+        try {
+            Thread.sleep(100);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (ticket > 0) {
+            System.out.println(Thread.currentThread().getName() + ": 买票，票号" + ticket);
+            ticket--;
+        }
+    }
+}
+// 继承方式
+class Window3 extends Thread {
+    private static int ticket = 100;
+    @Override
+    public void  run() {
+        while (ticket > 0) {
+            saleTicket();
+        }
+    }
+    // 同步监视器 Window3.class
+    synchronized public static void saleTicket() {
+        try {
+            sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println(Thread.currentThread().getName() + ": 买票，票号" + ticket--);
+    }
+}
+```
+
+关于同步方法的总结：
+
+1. 同步方法仍然涉及同步监视器，只是不需要我们显示的声明。
+
+2. 非静态的同步方法，同步监视器是：this
+
+   静态的同步方法：同步监视器是：当前类本身
+
+使用同步机制将单例模式中的懒汉式改写为线程安全的
+
+```java
+class Bank{
+    private Bank() {}
+    private static Bank instance = null;
+    public static Bank getInstance() {
+        // 方式一；效率稍差
+//        synchronized (Bank.class) {
+//            if (instance == null) {
+//                instance = new Bank();
+//            }
+//            return instance;
+//        }
+        // 方式二：效率更高
+        if (instance == null) {
+            synchronized (Bank.class) {
+                if (instance == null) instance = new Bank();
+            }
+        }
+        return instance;
+    }
+}
+```
 
 
 
