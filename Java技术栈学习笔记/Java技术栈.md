@@ -1249,7 +1249,7 @@ class Window3 extends Thread {
 
    静态的同步方法：同步监视器是：当前类本身
 
-使用同步机制将单例模式中的懒汉式改写为线程安全的
+使用**同步机制**将单例模式中的懒汉式改写为线程安全的
 
 ```java
 class Bank{
@@ -1274,11 +1274,123 @@ class Bank{
 }
 ```
 
+#### 1.1.5.5 线程的死锁问题
+
+1. 死锁的理解：不同的线程分别占用对方需要的同步资源不放弃，都在等待对方放弃自己需要的同步资源，就形成了线程的死锁
+2. 说明：
+   * 出现死锁后不会出现异常，不会出现提示，只是所有的线程都处于阻塞状态，无法继续
+   * 我们使用同步时，要避免出现死锁
+
+```java
+public static void main(String[] args) {
+    StringBuffer s1 = new StringBuffer();
+    StringBuffer s2 = new StringBuffer();
+    new Thread() {
+        @Override
+        public void run() {
+            synchronized (s1) {
+                s1.append("a");
+                s2.append("1");
+                try {
+                    sleep(100);  //  
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                synchronized (s2) {
+                    s1.append("b");
+                    s2.append("2");
+                    System.out.println(s1);
+                    System.out.println(s2);
+                }
+            }
+        }
+    }.start();
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+            synchronized (s2) {
+                s1.append("c");
+                s2.append("3");
+                try {
+                    sleep(100); //
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                synchronized (s1) {
+                    s1.append("d");
+                    s2.append("4");
+                    System.out.println(s1);
+                    System.out.println(s2);
+                }
+            }
+        }
+    }).start();
+}
+
+// 上面的代码中有两处sleep，如果没有sleep出现死锁的概率会很低，加了sleep会增加死锁的概率
+```
+
+解决线程安全问题的方式三：Lock锁--- jdk5.0新增
+
+```java
+class Window0 implements Runnable {
+    private int ticket = 100;  // 不需要加static
+    // 1.实例化ReentrantLock，创建lock对象
+    private ReentrantLock lock = new ReentrantLock();
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                // 2. 调用锁定方法lock()
+                lock.lock();
+                if (ticket > 0) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(Thread.currentThread().getName() + ": 买票，票号" + ticket);
+                    ticket -- ;
+                }else {
+                    break;
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+}
+
+public class LockTest {
+    public static void main(String[] args) {
+        Window0 window = new Window0();
+        Thread t1 = new Thread(window);
+        Thread t2 = new Thread(window);
+        Thread t3 = new Thread(window);
+        t1.start();
+        t2.start();
+        t3.start();
+    }
+}
+```
 
 
 
 
 
+#### **面试题**
+
+##### 1. synchronized和Lock的异同
+
+相同点：二者都可以解决线程安全问题
+
+不同点：
+
+* synchronized（隐式锁）机制在执行完相应的同步代码后，自动地释放同步监视器，Lock（显式锁）需要手动启动同步（lock()），同时结束同步也需要手动实现（unlock()）
+* lock只有代码锁，synchronized有代码锁和方法锁
+* 使用lock锁，JVM将花费较少的时间来调度线程，性能更好。并且具有更好的扩展性
+
+优先使用顺序：Lock——>同步代码块——>同步方法
 
 ### 1.1.6 容器
 
