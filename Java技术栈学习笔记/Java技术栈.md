@@ -1374,6 +1374,169 @@ public class LockTest {
 }
 ```
 
+#### 1.1.5.6 线程的通信
+
+线程通信的例子：使用两个线程打印-100，线程1线程2，交替打印
+
+```java
+/**
+ * 涉及到的三个方法：
+ * wait(): 一旦执行此方法，当前线程就进入阻塞状态，并释放同步监视器（锁）
+ * notify(): 一旦执行此方法，就会唤醒wait的一个线程，如果有多个线程被wait，就唤醒优先级高的线程
+ * notyfyAll(): 唤醒所有被wait的线程
+ */
+class Number implements Runnable {
+    private int number = 1;
+    @Override
+    public void run() {
+        while (true) {
+            synchronized (this) {
+                notifyAll();  // 唤醒其他所有线程
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if (number <= 100) {
+                    System.out.println(Thread.currentThread().getName() + ":" + number ++);
+                }else {
+                    break;
+                }
+                try {
+                    wait(); //使得调用入戏啊wait()方法的线程进入阻塞状态
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+}
+public class Communication {
+    public static void main(String[] args) {
+        Number number = new Number();
+        Thread t1 = new Thread(number);
+        Thread t2 = new Thread(number);
+        t1.setName("线程-1");
+        t2.setName("线程-2");
+        t1.start();
+        t2.start();
+    }
+}
+```
+
+**说明**：
+
+1. wait(), notify(), notifyAll() 三个方法必须使用在同步代码块或同步方法中，
+2. wait(), notify(), notifyAll() 三个方法的调用者必须是同步代码块或同步方法中的同步监视器，否则，会出现IllegalMonitiorStateException异常
+3. wait(), notify(), notifyAll() 三个方法是定义在java.lang.Object类中
+
+sleep() 和wait()的异同？
+
+1. 相同点：一旦执行方法，都可以使得当前的线程进入阻塞状态
+2. 不同点：
+   1. 两个方法生命的位置不同：Thread类中声明sleep()， Object类中声明wait()
+   2. 嗲用范围不同：sleep()可以在任何需要的场景下调用。wait()必须使用在同步代码块中
+   3. 关于是否释放同步监视器：如果两个方法都使用在同步代码快或同步方法中，sleep()不会释放锁，wait()会释放锁
+
+#### 1.1.5.7 jdk1.5新增的线程创建方式
+
+##### 1.1.5.7.1 实现Callable接口
+
+```java
+// 1.创建一个实现Callable的实现类
+class NumThread implements Callable {
+    // 2. 实现call方法,将此线程需要执行的操作声明在call()中
+    @Override
+    public Object call() throws Exception {
+        int sum = 0;
+        for (int i = 1; i <= 100; i++) {
+            System.out.println(i);
+            sum += i;
+        }
+        return sum;
+    }
+}
+public class NewThread1 {
+    public static void main(String[] args) {
+        // 3. 创建Callable接口实现类的对象
+        NumThread numThread = new NumThread();
+        // 4. 将此Callable接口实现类的对象作为传递到FutureTask构造器中,chuangjianFuturetask对象
+        FutureTask futureTask = new FutureTask(numThread);
+        // 5. 将Futuretask的对象作为参数传递到Thread类的构造器中,创建Thread对象并调用start()方法
+        new Thread(futureTask).start();
+        try {
+            // 6.获取Callable中call方法的返回值
+            // get()返回值即为FutureTask构造参数Callable实现类重写的call()的返回值
+            Object sum = futureTask.get();
+            System.out.println("总和 : " + sum);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+如何理解实现Callable接口的方式创建多线程比实现Runnable接口创建多线程方式强大？
+
+1. call()可以有返回值。
+2. call()可以抛出异常，被外面的操作捕获，获取异常的信息
+3. Callable是支持泛型的
+
+##### 1.1.5.7.2 线程池
+
+背景：经常创建和销毁、使用量特别大的资源，比如并发情况下的线程，对性能影响很大。
+
+思路：提前创建好多个线程，放入线程池，使用时直接获取，使用完放回池中。可以避免频繁创建销毁、实现重复利用。类似生活中的公共交通工具。
+
+好处：
+
+* 提高响应速度（减少创建新线程的时间）
+* 降低资源消耗（重复利用线程池中线程，不需要每次都创建）
+* 便于线程管理
+  * corePoolSize：核心池的大小
+  * maximumPoolSize：最大线程数
+  * keepAliveTime：线程没有任务时最多保持多长时间后会终止
+
+```java
+class NumTread implements Runnable {
+    @Override
+    public void run() {
+        int sum = 0;
+        for (int i = 1; i <= 100; i++) {
+            System.out.println(i % 2 == 0 ? i : "-1");
+            sum += i;
+        }
+    }
+}
+class NumThread1 implements Callable<Integer> {
+    @Override
+    public Integer call() throws Exception {
+        int sum = 0;
+        for (int i = 1; i <= 100; i++) {
+            System.out.println(i % 2 != 0 ? i : "-2");
+            sum += i;
+        }
+        return sum;
+    }
+}
+public class ThreadPools {
+    public static void main(String[] args) {
+        // 1. 提供指定线程数量的线程池
+        ExecutorService iExecutorService = Executors.newFixedThreadPool(10);
+        // 设置线程池的属性
+        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) iExecutorService;
+        threadPoolExecutor.setCorePoolSize(15);
+
+        // 2. 执行指定的线程的操作.需要提供实现Runnable接口的或Callable接口实现类的对象
+        threadPoolExecutor.execute(new NumTread()); // 适合于Runnable
+        threadPoolExecutor.submit(new NumThread1()); //适合于Callable
+        threadPoolExecutor.shutdown(); // 关闭线程池
+    }
+}
+```
+
 
 
 
@@ -1391,6 +1554,169 @@ public class LockTest {
 * 使用lock锁，JVM将花费较少的时间来调度线程，性能更好。并且具有更好的扩展性
 
 优先使用顺序：Lock——>同步代码块——>同步方法
+
+
+
+##### 2. 创建多线程有几种方式
+
+四种
+
+#### **练习题**
+
+##### 1. **多人向同一个账户存钱**
+
+```java
+/*
+    银行有一个账户
+    有两个储户分别向同一个账户存3000元，每次存1000，存三次。每次存完打印账户余额
+ */
+class Account {
+    private Double balance;
+    public Account(Double balance) {
+        this.balance = balance;
+    }
+    public Double balanceDeal(Double balance, Integer flag) { // flag = 1;取钱
+        if (flag == 0) {
+            this.balance += balance;
+        }else {
+            this.balance -= balance;
+        }
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println(Thread.currentThread().getName() + " 存了1000元后 " + getBalance());
+        return getBalance();
+    }
+    public Double getBalance() { return balance; }
+}
+class Customer implements Runnable {
+
+    private final Account account;
+    public Customer(Account account) { this.account = account; }
+    @Override
+    public void run() {
+        for (int i = 0; i < 3; i++) {
+            synchronized (account) {  // 这里的锁不能用this,因为Customer对象有俩
+                account.balanceDeal(1000.0, 0);
+            }
+        }
+    }
+}
+public class AccountTest {
+    public static void main(String[] args) {
+        Account account = new Account(0.0);
+        Customer c1 = new Customer(account);
+        Customer c2 = new Customer(account);
+        Thread thread1 = new Thread(c1);
+        thread1.setName("爸爸");
+        Thread thread2 = new Thread(c2);
+        thread2.setName("妈妈");
+        thread1.start();
+        thread2.start();
+    }
+}
+```
+
+##### 2. 经典例题：生产者 / 消费者问题
+
+![image-20220408165732382](images/image-20220408165732382.png)
+
+```java
+/**
+ * 分析：
+ * 1.是否是多线程问题？是，生产者线程，消费者线程
+ * 2.是否是共享数据？是，店员（或产品）
+ * 3.如何解决线程安全问题？同步机制，有三种方法
+ * 4.是否涉及到线程通信？是
+ */
+class Clerk {
+    private Integer procduction = 0;
+    // 生产产品 锁是Clerk的对象
+    synchronized public void produceProduction() {
+        if (procduction < 20) {
+            System.out.println(Thread.currentThread().getName() + ": 开始生产第" + (++procduction) + "个产品");
+            notify();
+        }else {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    //消费 锁是Clerk的对象
+    synchronized public void consumeProduction() {
+        if (procduction > 0) {
+            System.out.println(Thread.currentThread().getName() + ": 开始消费第" + (procduction--) +"个产品");
+            notify();
+        }else {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+class Producer implements Runnable{
+    private Clerk clerk;
+    public Producer(Clerk clerk) {
+        this.clerk = clerk;
+    }
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+//            System.out.println(Thread.currentThread().getName() + ": 开始生产");
+            clerk.produceProduction();
+        }
+    }
+}
+
+class Consumer implements Runnable{
+
+    private Clerk clerk;
+
+    public Consumer(Clerk clerk) {
+        this.clerk = clerk;
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+//            System.out.println(Thread.currentThread().getName() + ": 开始消费");
+            clerk.consumeProduction();
+        }
+    }
+}
+
+public class ProductConsumerTest {
+    public static void main(String[] args) {
+        Clerk clerk = new Clerk();
+        Producer p1 = new Producer(clerk);
+        Thread t1 = new Thread(p1);
+        t1.setName("生产者");
+
+        Consumer c1 = new Consumer(clerk);
+        Thread t2 = new Thread(c1);
+        t2.setName("消费者");
+
+        t1.start();
+        t2.start();
+    }
+}
+```
 
 ### 1.1.6 容器
 
