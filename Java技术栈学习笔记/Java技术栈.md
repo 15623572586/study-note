@@ -4,11 +4,77 @@
 
 ### 1.1.1 面向对象 OO（Object Oriented）
 
-#### 一、什么是类、对象，如何理解面向对象编程？
+#### 1.1.1.1  面向对象与面向过程的比较
+
+* 面向过程：强调的是功能行为，以函数为最小单位，考虑怎么做
+* 面向对象：强调具备了功能的对象，以类/对象为最小单位，考虑谁来做。
+
+比如“把大象装进冰箱”这个例子。。。。。。
+
+#### 1.1.1.2 对象的创建和使用
+
+* 堆（Heap）：此内存区域的唯一目的就是**存放对象实例**，几乎所有的对象实例都在这里分配内存。Java虚拟机的描述是：所有对象实例以及数组都要在堆上分配。
+
+* 栈（VM Stack）：是指虚拟机栈，虚拟机栈用于存储局部变量等。局部变量表存放了编译器可知长度的各种基本数据类型（boolean、byte、char、short、int、float、long、double）、对象引用（reference类型，它不等同于对象本身，是对象在对内存的首地址）。方法执行完，自动释放。
+* 方法区（Method Area）：用于存储已被虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码等数据
+
+![](images/jvm-model.webp)
+
+#### 1.1.1.3 面向对象的三大特征
 
 **类**：具有相同属性和方法的对象的集合，它为属于该类的所有对象提供了统一的抽象描述，其内部包括属性和方法两个主要部分。
 
-成员变量或方法限定词的含义：
+**对象**：是类的实体，每个对象都有状态（属性）与行为（方法）。
+
+**面向对象**：
+
+* 面向对象的基本特性：继承、封装和多态。
+
+  1）继承：子类对象拥有父类全部属性和方法。
+
+  1. 单继承：一个父类可以有多个子类，但是一个子类只能有一个父类。（但支持多重继承）
+  2. java.lang.Object是Java标准根类，任何一个类，如没有明确指定从其它类中继承，默认都是继承Object。（直接或间接）
+  3. 子类无法访问父类中private或default方法和成员变量
+  4. 子类可以重写父类的方法（非final方法）
+  5. 向上转型：通过子类实例化父类，例如：
+
+  ```java
+  public A {
+      public String s = "A";
+      public void test() {}
+      public void func() {
+          System.out.println("Afunc");
+      }
+  }
+  public B extends A{
+      public String s = "B";
+      public void test() {}
+      public void func() {
+          System.out.println("Bfunc");
+          this.test(); //子类的test()
+          super.test(); //父类的test()
+      }
+  }
+  A a = new B(); // 向上转型
+  a.func(); //输出Bfunc，向上转型访问子类的方法-----虚拟方法调用
+  a.s; // A 向上转型访问父类的属性
+  ```
+
+  ​	6. 构造器：子类不继承构造器，但是如果父类构造器有参数，子类必须用super(params)显式调用父类构造器。
+
+  2）封装：封装就是把普通的对象进行封装，对象的属性设为私有的，对外提供get和set方法，其他类只能通过get和set对对象属性值进行操作。
+
+  3）多态：多态是建立在继承的基础上的，一个父类对象可以产生多个不同的子类对象，根据这些子类对象的不同可以具备不同的方法，也就是说表现出了不同的形态即多态。换句话说就是子类继承父类方法并重写，重写的方法必须和父类的方法返值相同，方法名相同，参数列表相同。
+
+  ```java
+  Parent p = new Child();
+  ```
+
+  使用多态方式调用方法时，首先检查基类（父类）中是否有该方法，如果没有，编译出错；如果有再去调用派生类（子类）的同名方法。（编译看左边，运行看右边）
+
+  **注意**：重载是发生在同一个类中的，方法名相同，参数不同，所以跟多态没有半毛钱关系！！！
+
+#### 关键字
 
 * static：静态变量或方法。即使没有创建对象，也能调用这个变量或方法。(原话来自Thinking in Java)
   如果一个类中声明了静态变量，则该静态变量的存储空间不会随着对象创建而改变，即：N个对象共享这个静态变量。
@@ -74,57 +140,187 @@
 
 * const、goto作为保留字，但是目前的java版本中没有用到。
 
-**对象**：是类的实体，每个对象都有状态（属性）与行为（方法）。
 
-**面向对象**：
-
-* 面向对象的基本特性：继承、封装和多态。
-
-  1）继承：子类对象拥有父类全部属性和方法。
-
-  1. 单继承：一个父类可以有多个子类，但是一个子类只能有一个父类。（但支持多重继承）
-  2. java.lang.Object是Java标准根类，任何一个类，如没有明确指定从其它类中继承，默认都是继承Object。（直接或间接）
-  3. 子类无法访问父类中private或default方法和成员变量
-  4. 子类可以重写父类的方法（非final方法）
-  5. 向上转型：通过子类实例化父类，例如：
-
-  ```java
-  public A {
-      public String s = "A";
-      public void test() {}
-      public void func() {
-          System.out.println("Afunc");
-      }
-  }
-  public B extends A{
-      public String s = "B";
-      public void test() {}
-      public void func() {
-          System.out.println("Bfunc");
-          this.test(); //子类的test()
-          super.test(); //父类的test()
-      }
-  }
-  A a = new B(); // 向上转型
-  a.func(); //输出Bfunc，向上转型访问子类的方法
-  a.s; // A 向上转型访问父类的属性
-  ```
-
-  ​	6. 构造器：子类不继承构造器，但是如果父类构造器有参数，子类必须用super(params)显式调用父类构造器。
-
-  2）封装：封装就是把普通的对象进行封装，对象的属性设为私有的，对外提供get和set方法，其他类只能通过get和set对对象属性值进行操作。
-
-  3）多态：多态是建立在继承的基础上的，一个父类对象可以产生多个不同的子类对象，根据这些子类对象的不同可以具备不同的方法，也就是说表现出了不同的形态即多态。换句话说就是子类继承父类方法并重写，重写的方法必须和父类的方法返值相同，方法名相同，参数列表相同。
-
-  ```java
-  Parent p = new Child();
-  ```
-
-  使用多态方式调用方法时，首先检查基类（父类）中是否有该方法，如果没有，编译出错；如果有再去调用派生类（子类）的同名方法。
-
-  **注意**：重载是发生在同一个类中的，方法名相同，参数不同，所以跟多态没有半毛钱关系！！！
 
 ### 1.1.2 字符串处理
+
+#### 1.1.2.1 字符串String的特性
+
+String:字符串，使用一对""引起来表示
+
+1. String声明为final的，不可被继承
+2. String实现了Serializable接口：表示字符串是支持序列化的。
+   实现了Comparable接口：表示String可以比较大小
+3. String内部定义了final char[] value用于存储字符串数据
+4. String：代表不可变的字符序列，简称：不可变性
+   体现：
+   1. 当对字符串重新赋值时，需要重新指定内存区域赋值，不能使用原有的value进行复制；
+   2. 当对现有的字符串进行连接操作是，也需要指定内存区域赋值，不能使用原有的value进行赋值
+   3. 当调用String的replace()方法修改指定字符或字符串时，也需要重新指定内存区域赋值，
+5. 通过字面量的方式（区别于new）一个字符串赋值，此时的字符串值声明在字符串常量池中
+6. 字符串常量池中不会出现相同的内容
+
+![image-20220409134846050](images/image-20220409134846050.png)
+
+```java
+public void test1() {
+    String s1 = "abc";
+    String s2 = "abc";
+    System.out.println(s1 == s2); //true
+    s1 = "hello";
+    System.out.println(s1 == s2); //false
+    String s3 = "abc";
+    s3 += "def";
+    System.out.println(s3); // abcdef
+    System.out.println(s2); // abc
+    String s4 = "abc";
+    String s5 = s4.replace('a', 'm');
+    System.out.println(s4); // abc
+    System.out.println(s5); // mbc
+}
+```
+
+#### 1.1.2.2 String的实例化方式
+
+方式一：通过字面量定义的方式
+
+```java
+// 此时s1和s2的数据abc声明在方法区中的字符串常量池中。
+String s1 = "abc";
+String s2 = "abc";
+```
+
+方式二：通过new + 构造器的方式
+
+```java
+// 此时的s3和s4保存的地址值，是数据在堆空间中开辟空间以后对应的地址值 
+String s3 = new String("abc");
+String s4 = new String("abc");
+```
+
+![image-20220409141056592](images/image-20220409141056592.png)
+
+![image-20220409141549361](images/image-20220409141549361.png)
+
+结论：
+
+1. 常量与常量的拼接结果在常量池。且常量池中不会存在相同内容的常量。
+2. 只要其中有一个是变量，结果就在堆中
+
+```java
+public void test2() {
+    String s1 = "abc";
+    String s2 = "def";
+    String s3 = "abcdef";
+    String s4 = "abc" + "def";
+    String s5 = s1 + "def";
+    String s6 = "abc" + s2;
+    String s7 = s1 + s2;
+    System.out.println(s3 == s4); // true
+    System.out.println(s3 == s5); // false
+    System.out.println(s3 == s6); // false
+    System.out.println(s3 == s7); // false
+    System.out.println(s5 == s6); // false
+    System.out.println(s5 == s7); // false
+    System.out.println(s6 == s7); // false
+}
+```
+
+![image-20220409201228732](images/image-20220409201228732.png)
+
+#### 1.1.2.3 StringBuffer 和 StringBuilder
+
+1. String、StringBuffer、StringBuilder三者的异同？
+
+String：不可变的字符序列；底层使用char[]存储
+
+StringBuffer：可变的字符序列；线程安全的，效率低；底层使用char[]存储
+
+StringBuilder：可变的字符序列；jdk5.0新增的，线程不安全的，效率高；底层使用char[]存储
+
+源码分析：
+
+```java
+String str =  new String(); //new char[0];
+String str = new String("abc"); // char[] value = new char[]{'a','b','c'}
+
+StringBuffer sb = new StringBuffer(); // char[] value = new char[16];
+sb.append('a'); value[0] = 'a';
+sb.append('b'); value[0] = 'b';
+StringBuffer sb1 = new StringBuffer("abc"); // char[] value = new char["abc".length() + 16];
+
+```
+
+问题一：System.out.println(sb1.length()); // 3
+
+问题二：扩容问题：如果要填记得数据底层数组装不下了，那就需要扩容底层数组。默认情况下，扩容为原来的2倍+2，同时将原来数组中的元素复制到新的数组中。
+
+指导意义：开发中建议使用StringBuffer(int capacity) 或者 StringBuilder(int capacity)
+
+效率：StringBuilder > StringBuffer > String
+
+
+
+
+
+#### 面试题
+
+##### 1. String s = new String("abc");方式创建对象，在内存中创建了几个对象？
+
+两个：一个是堆空间中new结构，另一个是char[]对应的常量池中的数据：”abc“
+
+##### 2. 程序题
+
+```java
+class StringTest1 {
+    String str = new String("good");
+    char[] ch = {'t', 'e', 's', 't'};
+    public void change(String str, char[] ch) {
+        str = "test ok";
+        ch[0] = 'b';
+    }
+}
+public void test3() {
+    StringTest1 stringTest1 = new StringTest1();
+    stringTest1.change(stringTest1.str, stringTest1.ch);
+    System.out.println(stringTest1.str); // good
+    System.out.println(stringTest1.ch);  // best
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### 1.1.4 I/O流
 
@@ -1050,8 +1246,8 @@ public class ThreadMethodTest {
 
 如何获取和设置当前线程的优先级：
 
-`getPriority()：获取线程的优先级``
-``setPriority(int p)：设置线程的优先级`
+`getPriority()：获取线程的优先级
+setPriority(int p)：设置线程的优先级`
 
 说明：高优先级的线程要抢占低优先级线程CPU执行权，但是只是从概率上将，高优先级的线程高概率的情况下被执行，并不意味着只有当高优先级的线程执行完以后，低优先级的线程才执行。
 
@@ -1374,7 +1570,7 @@ public class LockTest {
 }
 ```
 
-#### 1.1.5.6 线程的通信
+#### 1.1.5.6 线程通信
 
 线程通信的例子：使用两个线程打印-100，线程1线程2，交替打印
 
@@ -2538,12 +2734,6 @@ public void testProperties() {
 }
 ```
 
-
-
-
-
-
-
 ##### 面试题
 
 ###### 1. HashMap底层实现原理？
@@ -2556,11 +2746,262 @@ public void testProperties() {
 
 ### 1.1.7 异常
 
+#### 1.1.7.1 异常的体系结构
+
+java.lang.Throwable
+
+​		|----java.lang.Error：一般不编写针对性的代码进行处理
+
+​		|----java.lang.Exception：以进行异常处理
+
+​				|----编译时异常：
+
+​						|----IOException
+
+​								|----FileNotFoundException
+
+​						|----ClassNotFoundException
+
+​				|----运行时异常：
+
+​						|----NullPointerException
+
+​						|----ArrayIndexOutOfBoundsException
+
+​						|----ClassCastException
+
+​						|----NumberFormatException
+
+​						|----InputMismatchException
+
+​						|----ArithmeticException
+
+#### 1.1.7.2 异常的处理机制
+
+#####  1.1.7.2.1 抓抛模型
+
+过程一：”抛“：程序正在执行的过程，一旦出现异常，就会在异常代码处生成一个对应异常类对象，并将此对象抛出。一旦抛出对象之后，其后的代码就不再执行了。
+
+​	关于异常对象的产生：① 系统自动生成的异常对象 ② 手动的生成一个异常对象，并抛出
+
+过程二：”抓“：可以理解为异常的处理方式：
+
+* try-catch-finally
+* throws
+
+##### 1.1.7.2.2 try-catch-finally的使用
+
+```java
+try{
+
+}catch(异常类型1 变量名1){
+
+}catch(异常类型2 变量名2) {
+    
+}
+...
+finally{
+    // 一定会执行的代码
+    // 比如数据库连接、输入输出流、网络编程Socket等资源，JVM是不能自动回收的，我们需要自己手动进行资源的释放，此时资源释放，就需要声明在finally中
+    is.close(); 
+}
+```
+
+说明
+
+1. finally是可选的
+
+2. 使用try将可能出现异常的代码包装起来，在执行的过程中，一旦出现异常，就会生成一个对应异常类的对象，根据此对象的类型，去catch中进行匹配
+
+3. 一旦try中的异常对象匹配到某个catch时，就进入catch中进行异常处理。一旦处理完成，就跳出当前的try-catch结构（没有finally的情况）。继续执行其后的代码
+
+4. catch中的异常类型如果没有子父类关系，则谁声明在上，谁声明在下，无所谓。
+
+   catch中的异常类型如果满足子父类关系，则要求子类一定声明在父类的上面。否则，报错。
+
+5. 常用的异常对象处理方式：①String getMessage() ②printStackTrace()
+
+6. try中声明的变量，出了try结构以后就不能再被调用了。
+
+##### 1.1.7.2.3 throws + 异常类型
+
+1. ”throws + 异常类型“写在方法声明处。指明此方法执行时，可能会抛出的异常类型。
+
+   一旦当方法执行时，出现异常，仍会在异常代码处生成一个异常类的对象，此对象满足throws后异常类型时，就会被抛出。异常代码后续的代码，就不会再执行
+
+2. try-catch-finally：真正的将异常给处理掉了。
+
+   throws：只是将异常抛给方法调用者，并没有真正的将一场处理掉。
+
+**开发中如何选择？**
+
+* 如果父类中被冲洗的方法没有throws方式处理异常，则子类重写的方法也不能使用throws，意味着如果子类冲洗的方法中有异常，必须使用try-catch-finally方式处理。
+* 执行的方法a中，先后调用了另外的几个方法，这几个方法是递进关系执行的，我们建议这几个方法使用throws处理，而执行的方法a可以考虑使用try-catch-finally方式进行处理。
+
+##### 1.1.7.2.4 手动抛出
+
+```java
+throw new RunTimeException("message");
+throw new Exception("message");
+```
+
+
+
+
+
+
+
+
+
+#### 面试题
+
+常见的异常有哪些？举例说明
+
 ### 1.1.8 泛型
 
 ### 1.1.9 反射
 
-### 1.1.10 注解
+### 1.1.10 枚举&注解
+
+#### 1.1.10.1 如何定义枚举类
+
+* jdk5.0以前，自定义枚举类
+
+* jdk5.0以后可以使用enum关键字定义枚举类
+
+```java
+//
+public class SeasonTest {
+    public static void main(String[] args) {
+        Season season = Season.AUTUMN;
+        Season1 season1 = Season1.SPRING;
+    }
+}
+// 自定义枚举类
+class Season {
+    // 1. 声明Season对象的属性：private fianal修饰
+    private final String seasonName;
+    private final String seasonDesc;
+    // 2.私有化类的构造器，并给对象属性赋值
+    private Season(String seasonName, String seasonDesc) {
+        this.seasonName = seasonName;
+        this.seasonDesc = seasonDesc;
+    }
+    // 3. 提供当前枚举类的多个对象
+    static final Season SPRING = new Season("春", "春暖花开");
+    static final Season SUMMER = new Season("夏", "夏日炎炎");
+    static final Season AUTUMN = new Season("秋", "秋高气爽");
+    static final Season WINTER = new Season("冬", "冰天雪地");
+}
+
+interface Info {
+    void show();
+}
+
+//使用enum关键字定义枚举类， 默认继承java.lang.Enum
+enum Season1 {
+    // 1. 提供当前枚举类对象，多个对象之间用“,”，最后用“;“
+    SPRING("春", "春暖花开"),
+    SUMMER("夏", "夏日炎炎"),
+    AUTUMN("秋", "秋高气爽"),
+    WINTER("冬", "冰天雪地");
+    // 2. 声明Season对象的属性：private fianal修饰
+    private final String seasonName;
+    private final String seasonDesc;
+    // 3.私有化类的构造器，并给对象属性赋值
+    private Season1(String seasonName, String seasonDesc) {
+        this.seasonName = seasonName;
+        this.seasonDesc = seasonDesc;
+    }
+    @Override
+    public void show() {
+        System.out.println("show");
+    }
+}
+```
+
+使用enum关键字实现接口：
+
+* 跟普通类实现接口一样
+* 每个对象都实现接口
+
+```java
+interface Info {
+    void show();
+}
+//使用enum关键字定义枚举类
+enum Season1 implements Info{
+    // 1. 提供当前枚举类对象，多个对象之间用“,”，最后用“;“
+    SPRING("春", "春暖花开"){
+        @Override
+        public void show() {
+        }
+    },
+    SUMMER("夏", "夏日炎炎") {
+        @Override
+        public void show() {
+        }
+    },
+    AUTUMN("秋", "秋高气爽") {
+        @Override
+        public void show() {
+        }
+    },
+    WINTER("冬", "冰天雪地") {
+        @Override
+        public void show() {
+        }
+    };
+    // 2. 声明Season对象的属性：private fianal修饰
+    private final String seasonName;
+    private final String seasonDesc;
+    // 3.私有化类的构造器，并给对象属性赋值
+    private Season1(String seasonName, String seasonDesc) {
+        this.seasonName = seasonName;
+        this.seasonDesc = seasonDesc;
+    }
+}
+```
+
+#### 1.1.10.2 注解Annotation
+
+@Override：重写父类的方法
+
+@Deprecated：表示修饰的元素（类、方法）已过时。
+
+@SuppressWarnings：抑制编译器警告
+
+#### 1.1.10.3 如何自定义注解
+
+参照SuppressWarnings
+
+* 注解声明为：@interface
+* 内部定义成员，通常使用value表示
+* 可以指定成员的默认值，使用default定义
+* 如果自定义注解没有成员，表名是一个标识作用
+* 如果注解有成员，在使用注解时，需要指明成员的值
+
+```java
+public @interface MyAnnotation {
+    // 成员变量以无参方法的形式来声明
+    String value() default "Hi";
+}
+```
+
+#### 1.1.10.4 元注解
+
+对现有的的注解进行解释说明的注解
+
+* Retention
+* Target
+* Documented
+* Inherited
+
+
+
+
+
+
 
 ### 1.1.11 NIO
 
