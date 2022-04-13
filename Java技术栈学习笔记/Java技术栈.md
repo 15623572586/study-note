@@ -358,7 +358,7 @@ public void test3() {
 
 ![image-20220321083317751](images/image-20220321083317751.png)
 
-#### 1.1.4.2 各种流的使用
+#### 1.1.3.2 各种流的使用
 
 **使用流操作文件的步骤**：
 
@@ -367,7 +367,7 @@ public void test3() {
 3. 数据读入（写出）
 4. 流的关闭
 
-##### 一、字符流操作（Writer/Reader)
+##### 1.1.3.2.1 字符流操作（Writer/Reader)
 
 1. 读取文件的例子：
 
@@ -477,7 +477,7 @@ public void test3() {
     }
 ```
 
-##### 二、字节流操作(FileInputStream/FileOutputStream)
+##### 1.1.3.2.2 字节流操作(FileInputStream/FileOutputStream)
 
 不能使用使用字符流读取图片、视频等非文本二进制文件，使用字符流复制非文本二进制文件，文件会变大。
 
@@ -577,7 +577,7 @@ public static void testFileIntputOutputStream() {
 
 值得一说的是，对于复制或转储文件，使用字节流也是没有问题的，字节流只充当搬运通道的功能。
 
-##### 三、缓冲流的使用（处理流）
+##### 1.1.3.2.3 缓冲流的使用（处理流）
 
 1. 缓冲流：BufferedInputStream \ BufferedOutputStream \ BufferedReader \ BufferedWriter
 2. 作用：提高流的读取、写入的速度。
@@ -760,7 +760,7 @@ public static void fileDecrypt() {
 }
 ```
 
-##### 四、转换流（字符流、处理流）
+##### 1.1.3.2.4 转换流（字符流、处理流）
 
 项目中一般在读取文本文件内容的时候会用到，转换流其实就是解码与编码的过程，
 
@@ -848,7 +848,7 @@ public static void testStreamReaderWriter() {
 }
 ```
 
-##### 五、标准输入、输出流
+##### 1.1.3.2.5 标准输入、输出流
 
 1. Scanner
 
@@ -936,7 +936,7 @@ public static void systemInOut() {
 }
 ```
 
-##### 六、打印流
+##### 1.1.3.2.6 打印流
 
 ```java
 public static void main(String arg[]) throws Exception{
@@ -950,7 +950,7 @@ public static void main(String arg[]) throws Exception{
 }
 ```
 
-##### 七、数据流
+##### 1.1.3.2.7 数据流
 
 数据流是缓冲流的包装类，缓冲流又是FileInputstream的包装类，此类里面有各种写入字符串、基本数据类型数据的方法
 
@@ -968,7 +968,7 @@ public static void main(String[] args) throws IOException {
 }
 ```
 
-##### 八、对象流(处理流-序列化和反序列化)
+##### 1.1.3.2.8 对象流(处理流-序列化和反序列化)
 
 ObjectInputStream和ObjectOutputStream：用于存储和读取基本数据类型数据或对象的处理流。它的强大之处在于可以把Java中的对象写入到数据源中，也能把对象从数据源中还原回来。
 
@@ -1079,7 +1079,7 @@ class Person implements Serializable {
 }
 ```
 
-##### 九、随机存取文件流（了解）
+##### 1.1.3.2.9 随机存取文件流（了解）
 
 RandomAccessFile直接继承于java.lang.Object类，实现了DataInput和DataOutput接口，它既可以作为一个输入流，又可以作为一个输出流。
 
@@ -1116,10 +1116,27 @@ public class RandomAccessFileTest {
 }
 ```
 
-##### 十、NIO.2中Path、Paths、Files类的使用
+##### 1.1.3.2.10 NIO.2中Path、Paths、Files类的使用
 
 * Java NIO（New IO，Non-Blocking IO(无阻塞)）是从Java1.4开始引入的，它与原来的IO有同样的作用和目的，但是使用的方式完全不同，NIO支持面向缓冲区的（IO是面向流的）、基于通道的IO操作，NIO将以更高效的方式进行文件的读写操作。
 * JavaAPI中提供了两套NIO，一套是针对标准输入输出NIO，另一套就是网络编程NIO
+
+#### 1.1.3.3 第三方jar包
+
+commons-io-2.5.jar
+
+#### 1.1.4 网络编程
+
+#### 1.1.4.1 网络编程概述
+
+1. 网络编程中的两个问题
+   * 如何准确定位网络上一台或多台主机；定位主机上特定的应用
+   * 找到主机后如何可靠高效的进行数据传输
+2. 网络编程两个要素
+   * 对应问题一：IP和PORT
+   * 对应问题二：提供网络铜线协议：TCP/IP参考模型（应用层、传输层、网络层、物理+数据链路层）
+
+
 
 ### 1.1.5 多线程
 
@@ -2845,19 +2862,123 @@ throw new RunTimeException("message");
 throw new Exception("message");
 ```
 
-
-
-
-
-
-
-
-
 #### 面试题
 
 常见的异常有哪些？举例说明
 
+
+
+
+
 ### 1.1.8 泛型
+
+#### 1.1.8.1 为什么要使用泛型
+
+#### 1.1.8.2 在集合中使用泛型
+
+* 集合接口或集合类在jdk1.5时都修改为带泛型的结构
+
+* 在实例化集合类时，可以指明具体的泛型类型
+
+* 指明完以后，在集合类或接口中凡是定义类或接口时，内部结构（比如：方法、构造器、属性等）使用到泛型的位置都指定为实例化时泛型类型
+
+  比如：add(E e) ---->实例化后add(Integer e)
+
+* 泛型的类型必须时类，不能是基本数据类型，需要用到基本数据类型的位置，拿包装类替换
+
+* 如果实例化时，没有指明泛型的类型，默认为java.lang.Object类型
+
+#### 1.1.8.3 自定义泛型结构：泛型类、泛型接口；泛型方法
+
+```java
+// 自定义泛型类
+class Generic<T> {
+    String orderName;
+    int orderId;
+    // 类的内部结构就可以使用类的泛型
+    T orderT;
+    public Generic() {}
+    public Generic(String orderName, int orderId, T orderT) {
+        this.orderName = orderName;
+        this.orderId = orderId;
+        this.orderT = orderT;
+    }
+    public void setOrderId(int orderId) {
+        this.orderId = orderId;
+    }
+    public T getOrderT() {
+        return orderT;
+    }
+    public void setOrderT(T orderT) {
+        this.orderT = orderT;
+    }
+    public static void main(String[] args) {
+        Generic<Integer> genericTest = new Generic<>();
+        genericTest.setOrderId(1);
+        System.out.println(genericTest.getOrderT());
+    }
+}
+// 仍然是泛型类
+class Generic2<T > extends Generic<T> {
+    public static void main(String[] args) {
+        Generic2<String> generic2 = new Generic2<>();
+        generic2.setOrderId(1);
+        System.out.println(generic2.getOrderT());
+    }
+}
+// 不再是泛型类
+class Generic1 extends Generic<Integer> {
+    public static void main(String[] args) {
+        Generic1 generic1 = new Generic1();
+        generic1.setOrderId(1);
+        System.out.println(generic1.getOrderT());
+    }
+}
+```
+
+```java
+// 泛型方法 ：在方法中出现了泛型的结构，泛型参数鱼雷的泛型参数没有任何关系。
+// 换句话说，泛型方法所属的类是不是泛型都没关系
+public static  <E> List<E> copyDataFromArr(E[] arr) {
+    ArrayList<E> list = new ArrayList<>();
+    for (E e : arr) {
+        list.add(e);
+    }
+    return list;
+}
+```
+
+#### 1.1.8.4 泛型在继承方面的体现 & 通配符的使用
+
+1. 虽然类A是类B的父类，但是G<A>和G<B>二者不具备子父类关系，二者是并列关系。
+2. 类A是类B的父类，A<G>是B<G>的父类
+3. 通配符：?
+
+```java
+public void print(List<?> list) {
+    Iterator<?> iterator = list.iterator();
+    while (iterator.hasNext()) {
+        System.out.println(iterator.next());
+    }
+}
+```
+
+4. 有限制条件的通配符的使用
+
+   ? extends Person：G<? extends A> 可以作为G<A>和G<B>的父类，其中A是B的父类。规定上边界，包含A本身的子类类型 
+
+   ? super Person：G<? super A> 可以为作为G<A>和G<B>的父类,其中B是A的父类。规定下边界，包含A本身的父类类型 
+
+```java
+public void test() {
+    List<? extends Generic2> list = null;
+    List<? super Generic1> list1 = null;
+}
+```
+
+
+
+
 
 ### 1.1.9 反射
 
@@ -2992,14 +3113,24 @@ public @interface MyAnnotation {
 
 对现有的的注解进行解释说明的注解
 
-* Retention
-* Target
-* Documented
-* Inherited
+* Retention：用于所指定被修饰的Annotation的生命周期：SOURCE / CLASS(默认行为) / RUNTIME，只有声明为RUNTIME生命周期的注解，才能通过反射获取。
+* Target：用于指定被修饰的Annotation能用于修饰哪些程序元素
+* Documented：标识所修饰的注解再倍javadoc解析式，保留下来
+* Inherited：被它修饰的Annotation将具有继承性
 
+#### 1.1.10.5 jdk1.8新特性
 
+##### 1.1.10.5.1 可重复注解
 
+①在MyAnnotation上声明@Repeatable，成员值为MyAnnotations.calss
 
+②MyAnnotation的Target和Retention 和 Annotations相同
+
+##### 1.1.10.5.2 类型注解
+
+ElementType.TYPE_PARAMETER 表示该注解能写在类型变得声明语句中（如：泛型声明）。
+
+ElementType.TYPE_USE 表示该注解能写在使用类型的任何语句中。
 
 
 
@@ -3033,7 +3164,7 @@ public @interface MyAnnotation {
 
 ### 1.3.6 JUC并发工具类
 
-## 1.4 网络编程
+## 
 
 ## 1.5 Java设计模式
 
