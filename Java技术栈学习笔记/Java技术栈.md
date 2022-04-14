@@ -1125,7 +1125,7 @@ public class RandomAccessFileTest {
 
 commons-io-2.5.jar
 
-#### 1.1.4 网络编程
+### 1.1.4 网络编程
 
 #### 1.1.4.1 网络编程概述
 
@@ -1133,10 +1133,134 @@ commons-io-2.5.jar
    * 如何准确定位网络上一台或多台主机；定位主机上特定的应用
    * 找到主机后如何可靠高效的进行数据传输
 2. 网络编程两个要素
-   * 对应问题一：IP和PORT
+   * 对应问题一：IP和端口
    * 对应问题二：提供网络铜线协议：TCP/IP参考模型（应用层、传输层、网络层、物理+数据链路层）
 
+#### 1.1.4.2 通信要素一：IP和端口
 
+* IP
+  * 唯一标识Internet上的计算机（通信实体）
+  * 在java中使用InetAddress
+  * IP分类：IPv4 和IPv6、万维网和局域网
+  * 域名：
+  * 本地回路地址：127.0.0.1对应着 localhost
+  * 如何实例化InetAddress:两个方法 ： getByName(String hostname);   getLocalHost();
+* 端口
+  * 标识正在运行的的进程
+  * 16位的整数0~65525
+  * 端口分类：
+    * 公认端口：0~1023。被预先定义的服务通信占用，如HTTP占用端口80。
+    * 注册端口：1024~49151。分配给用户进程或应用程序。如mysql占用端口3306
+    * 动态/私有端口：49152~65535
+* IP与端口号的组合：套接字Socket
+
+```java
+InetAddress baidu = InetAddress.getByName("14.215.177.38");
+System.out.println(baidu); // /14.215.177.38
+InetAddress inetAddress = InetAddress.getByName("www.baidu.com");
+System.out.println(inetAddress); // www.baidu.com/14.215.177.38
+InetAddress inetAddress1 = InetAddress.getByName("localhost");
+System.out.println(inetAddress1); // localhost/127.0.0.1
+InetAddress localHost = InetAddress.getLocalHost();// 获取本机IP
+System.out.println(localHost); // DESKTOP-MIM84CO/10.162.34.244
+//获取主机域名
+System.out.println(localHost.getHostName()); //DESKTOP-MIM84CO
+//获取主机地址
+System.out.println(localHost.getHostAddress()); //10.162.34.244
+```
+
+#### 1.1.4.3 网络通信协议：TCP/IP协议簇
+
+##### 1.1.4.3.1 TCP
+
+* 使用TCP协议前，需要先建立TCP连接，形成传输数据通道
+* 传输前，采用”**`三次握手`**“方式，点对点通信，是**可靠**的。
+* TCp协议进行通信的两个应用进程：客户端，服务端。
+* 在连接中可进行**大数据量的传输**
+* 传输完毕，需要**释放已经建立的连接**，**效率低**。
+
+建立连接的**三次握手**：①客户端发送SYN报文，置发送信号为seq=X；②服务端收到SYN报文和发送信号X，服务端发送SYN+ACK报文，并置发送信号为seq=Y，再确认序号为ACK=X+1；③ 客户端收到服务端的确认报文，客户端发送ACK报文，并置发送信号为seq=Z，再确认序号为ACK=Y+1。
+
+![image-20220414212257814](images/image-20220414212257814.png)
+
+释放连接的**四次挥手**：
+
+![image-20220414212427881](images/image-20220414212427881.png)
+
+例题1：实现TCP网络编程
+
+```java
+// 实现TCP网络编程
+public void client() {
+    Socket socket = null;
+    OutputStream os = null;
+    try {
+        // 1. 创建Socket对象，指明服务器端的IP和端口号，
+        InetAddress inet = InetAddress.getByName("127.0.0.1");
+        socket = new Socket(inet, 8899);
+        // 2. 获取一个输出流,用于输出数据
+        os = socket.getOutputStream();
+        // 3. 写入数据
+        os.write("你好server， 我是client".getBytes(StandardCharsets.UTF_8));
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            // 关闭socket和流
+            os.close();
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+public void server() {
+    ServerSocket serverSocket = null;
+    Socket socket = null;
+    InputStreamReader isr = null;
+    try {
+        // 1.创建服务器端的ServerSocket,指明自己的端口号
+        serverSocket = new ServerSocket(8899);
+        // 2. 调用accept()表示接受来自客户端的socket
+        socket = serverSocket.accept();
+        // 3. 获取输入流
+        InputStream is = socket.getInputStream();
+        isr = new InputStreamReader(is);
+        char[] chars = new char[1024];
+        int len;
+        StringBuilder stringBuilder = new StringBuilder();
+        while ((len = isr.read(chars)) != -1) {
+            stringBuilder.append(chars, 0 , len);
+        }
+        System.out.println(stringBuilder);
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            // 资源关闭
+            isr.close();
+            socket.close();
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+例题2：客户端发送文件给服务端，服务端将文件保存在本地
+
+
+
+
+
+##### 1.1.4.3.2 UDP
+
+* 将数据、源、目的封装成数据包，**不需要建立连接，**
+* 每个数据报的大小限制在64K内
+* 发送不管对方是否准备好，接收方收到也不确认，故是**不可靠的。**
+* 可以广播发送
+* 发送数据结束时，**无需释放资源，开销小，速度快**
 
 ### 1.1.5 多线程
 
