@@ -1,24 +1,74 @@
-## 一、**链表、栈、队列**
+# 一、**链表、栈、队列**
 
-0、[时间复杂度与空间复杂度（补充内容）](https://link.zhihu.com/?target=https%3A//www.cxyxiaowu.com/1959.html)
+## 0、[时间复杂度与空间复杂度（补充内容）](https://link.zhihu.com/?target=https%3A//www.cxyxiaowu.com/1959.html)
 
-1、[链表的基础知识：单链表](https://link.zhihu.com/?target=https%3A//www.algomooc.com/1070.html)
+## 1、[删除链表的倒数第 N 个结点(LeetCode 19)](https://leetcode-cn.com/problems/remove-nth-node-from-end-of-list/)
 
-2、[反转链表（ LeetCode 206 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/654.html)
+```java
+class Solution {
+    public ListNode removeNthFromEnd(ListNode head, int n) {
+        if(head.next == null) {
+            return null;
+        }
+        int len = n;
+        ListNode fast = head; //
+        ListNode flow = head;
+        ListNode pre = flow;
+        while(--len > 0) {
+            fast = fast.next;
+        }
+        while(fast != null && fast.next != null) {
+            fast = fast.next;
+            pre = flow;
+            flow = flow.next;
+        }
+        pre.next = flow.next;
+        if(flow == head) {
+            head = head.next;
+        }
+        flow = null;
+        return head;
+    }
+}
+```
 
-3、[相交链表（ LeetCode 160 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/693.html)
+## 2、[反转链表（ LeetCode 206 ）](https://leetcode-cn.com/problems/reverse-linked-list/)
 
-4、[合并两个有序链表 （ LeetCode 21 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/658.html)
+```java
+class Solution {
+    public ListNode reverseList(ListNode head) {
+        if(head == null) {
+            return null;
+        }
+        ListNode tail = head;
+        ListNode pre = head.next;
+        tail.next = null;
+        while(pre != null) {
+            ListNode temp = pre.next;
+            pre.next = tail;
+            tail = pre;
+            pre = temp;
+        }
+        return tail;
+    }
+}
+```
 
-5、[分隔链表 （ LeetCode 86 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/682.html)
 
-6、[环形链表 II （ LeetCode 142 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/746.html)
 
-7、[反转链表 II （ LeetCode 92 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/656.html)
+## 3、[相交链表（ LeetCode 160 ）]()
 
-8、[复制带随机指针的链表（ LeetCode 138 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/708.html)
+## 4、[合并两个有序链表 （ LeetCode 21 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/658.html)
 
-9、[栈的基础知识](https://link.zhihu.com/?target=https%3A//www.algomooc.com/1081.html)
+## 5、[分隔链表 （ LeetCode 86 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/682.html)
+
+## 6、[环形链表 II （ LeetCode 142 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/746.html)
+
+## 7、[反转链表 II （ LeetCode 92 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/656.html)
+
+## 8、[复制带随机指针的链表（ LeetCode 138 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/708.html)
+
+## 9、[栈的基础知识](https://link.zhihu.com/?target=https%3A//www.algomooc.com/1081.html)
 
 10、[有效的括号（ LeetCode 20 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/610.html)
 
@@ -52,7 +102,7 @@
 
 25、[链表中倒数第 k 个节点（ 剑指Offer 22 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/764.html)
 
-## 二、**递归、排序、贪心**
+# 二、**递归、排序、贪心**
 
 1、[递归基础知识](https://link.zhihu.com/?target=https%3A//www.algomooc.com/1115.html)
 
@@ -116,7 +166,7 @@
 
 31、合并区间（ LeetCode 56 ）
 
-## 三、**搜索算法、回溯算法、位运算、二分查找**
+# 三、**搜索算法、回溯算法、位运算、二分查找**
 
 1、[二分查找基础知识](https://link.zhihu.com/?target=https%3A//www.algomooc.com/1145.html)
 
@@ -190,7 +240,7 @@
 
 36、全排列（ LeetCode 46 ）
 
-## 四、**二叉树**
+# 四、**二叉树**
 
 1、[二叉树基础知识](https://link.zhihu.com/?target=https%3A//www.algomooc.com/1498.html)
 
@@ -244,7 +294,7 @@
 
 26、[最大二叉树（ LeetCode 654 ）](https://link.zhihu.com/?target=https%3A//www.algomooc.com/1488.html)
 
-## 五、**动态规划、背包问题**
+# 五、**动态规划、背包问题**
 
 1、动态规划基础知识和解题步骤
 
@@ -314,7 +364,7 @@
 
 33、最后一块石头的重量 II（ LeetCode 1049 ）
 
-## 六、**剑指 Offer 系列**
+# 六、**剑指 Offer 系列**
 
 [剑指 Offer 03. 数组中重复的数字](https://link.zhihu.com/?target=https%3A//blog.algomooc.com/003.html)
 
