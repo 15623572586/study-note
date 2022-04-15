@@ -1248,9 +1248,78 @@ public void server() {
 }
 ```
 
-例题2：客户端发送文件给服务端，服务端将文件保存在本地
+例题2：客户端发送文件给服务端，服务端将文件保存在本地，并返回“发送成功”给客户端，关闭连接
 
-
+```java
+public void client1() {
+    BufferedOutputStream bos = null;
+    BufferedInputStream bis = null;
+    Socket socket = null;
+    ByteArrayOutputStream baos = null;
+    try {
+        socket = new Socket(InetAddress.getByName("127.0.0.1"), 2255);
+        bos = new BufferedOutputStream(socket.getOutputStream());
+        bis = new BufferedInputStream(new FileInputStream("F:\\projects\\java-demo\\src\\Study\\InetTest\\img.png"));
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = bis.read(buffer)) != -1) {
+            bos.write(buffer, 0, len);
+        }
+        // 关闭数据输出，告诉服务器端不再发送数据了，否则服务端将一直阻塞在while循环中
+        socket.shutdownOutput();
+        // 接受来自于服务器端的数据
+        InputStream isByServer = socket.getInputStream();
+        baos = new ByteArrayOutputStream();
+        byte[] buf = new byte[1024];
+        int n;
+        while ((n = isByServer.read(buf)) != -1) {
+            baos.write(buf, 0, n);
+        }
+        System.out.println(baos);
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            bis.close();
+            socket.close();
+            baos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+public void server1() {
+    BufferedInputStream bis = null;
+    BufferedOutputStream bos = null;
+    Socket socket = null;
+    OutputStream os = null;
+    try {
+        ServerSocket serverSocket = new ServerSocket(2255);
+        socket = serverSocket.accept();
+        bis = new BufferedInputStream(socket.getInputStream());
+        bos = new BufferedOutputStream(new FileOutputStream("F:\\projects\\java-demo\\src\\Study\\InetTest\\img1.png"));
+        byte[] bytes = new byte[1024];
+        int len;
+        while ((len = bis.read(bytes)) != -1) {
+            bos.write(bytes, 0, len);
+        }
+        // 服务器端向客户端返回信息
+        os = socket.getOutputStream();
+        os.write("发送成功".getBytes(StandardCharsets.UTF_8));
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            bos.close();
+            bis.close();
+            socket.close();
+            os.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
 
 
 
@@ -1261,6 +1330,50 @@ public void server() {
 * 发送不管对方是否准备好，接收方收到也不确认，故是**不可靠的。**
 * 可以广播发送
 * 发送数据结束时，**无需释放资源，开销小，速度快**
+
+```java
+public void sender() {
+    DatagramSocket socket = null;
+    try {
+        socket = new DatagramSocket();
+        String message = "服务端你好，我在发数据";
+        InetAddress inet = InetAddress.getByName("localhost");
+        DatagramPacket datagramPacket = new DatagramPacket(message.getBytes(), 0, message.getBytes().length, inet, 2255);
+
+        socket.send(datagramPacket);
+    } catch (IOException e) {
+        e.printStackTrace();
+        socket.close();
+    } finally {
+    }
+}
+@Test
+public void recevicer() {
+    DatagramPacket datagramPacket = null;
+    DatagramSocket datagramSocket = null;
+    try {
+        datagramSocket = new DatagramSocket(2255);
+        byte[] buf = new byte[1024];
+        datagramPacket = new DatagramPacket(buf, 0, buf.length);
+        datagramSocket.receive(datagramPacket);
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        datagramSocket.close();
+    }
+    System.out.println(new String(datagramPacket.getData(), 0, datagramPacket.getLength()));
+}
+```
+
+#### 1.1.4.4 URL编程
+
+1. URL：统一资源定位符，对应着互联网的某一资源地址
+
+2. 格式：http://localhost:8080/example/file.jpg?username=tom
+
+   ​			协议    主机名   端口号     资源地址       参数列表
+
+
 
 ### 1.1.5 多线程
 
@@ -3105,6 +3218,73 @@ public void test() {
 
 
 ### 1.1.9 反射
+
+#### 1.1.9.1 调用私有构造器、属性、方法
+
+```java
+public static void main(String[] args) {
+    //通过反射，可以调用Person类的私有结构，比如私有构造器，私有属性、私有方法
+    // 1.通过反射，创建Person类的对象
+    try {
+        Class<Person> clazz = Person.class;
+        Constructor<Person> constructor = clazz.getDeclaredConstructor(String.class, int.class);
+        constructor.setAccessible(true);
+        Person tom = constructor.newInstance("tom", 24);
+        System.out.println(tom);
+        // 2. 通过反射，调用对象指定的属性、方法
+        // 调属性
+        Field age = clazz.getDeclaredField("age");
+        age.setAccessible(true);
+        age.set(tom, 12);
+        System.out.println(tom);
+        // 调方法
+        Method showName = clazz.getDeclaredMethod("showName");
+        showName.setAccessible(true);
+        String name = (String) showName.invoke(tom);
+        System.out.println(name);
+    } catch (NoSuchMethodException | IllegalAccessException | 
+             InstantiationException | InvocationTargetException | NoSuchFieldException e) {
+        e.printStackTrace();
+    }
+}
+class Person {
+    private String name;
+    private int age;
+
+    public Person(){}
+
+    private Person(String name) {
+        this.name = name;
+    }
+
+    private Person(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    private String showName() {
+        return this.name;
+    }
+
+    @Override
+    public String toString() {
+        return "Person{" +
+                "name='" + name + '\'' +
+                ", age=" + age +
+                '}';
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+
 
 ### 1.1.10 枚举&注解
 
